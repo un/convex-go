@@ -661,7 +661,7 @@
         "Token inequality holds for distinct args",
         "Regression test protects determinism"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 61,
