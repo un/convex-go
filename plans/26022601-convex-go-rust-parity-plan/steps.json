@@ -1,0 +1,1294 @@
+{
+  "plan": "26022601-convex-go-rust-parity-plan",
+  "created": "2026-02-26",
+  "goal": "Deliver a Go Convex client with behavioral 1:1 parity to convex-rs.",
+  "steps": [
+    {
+      "serial": 1,
+      "name": "Set up step-level validation harness",
+      "description": "Create a small runner that maps each step id to its required validation commands and artifacts. Guidance: this harness is used after every implementation step, not only at the end.",
+      "success_factors": [
+        "Each step can declare validations",
+        "Runner outputs pass/fail by step id",
+        "Validation evidence is saved in a predictable location"
+      ],
+      "completed": true
+    },
+    {
+      "serial": 2,
+      "name": "Add per-step validation manifest",
+      "description": "Introduce a machine-readable manifest linking step serials to required test targets, fixture checks, and manual verifications. Guidance: keep the manifest versioned and reviewed with each change.",
+      "success_factors": [
+        "All implementation steps have mapped validations",
+        "Manifest format is documented",
+        "CI can consume manifest entries"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 3,
+      "name": "Create remediation workflow template",
+      "description": "Define a standard remediation flow for any failed validation: reproduce, isolate, patch, regression-test, and document. Guidance: remediation outputs should reference failing step ids.",
+      "success_factors": [
+        "Template is written and reusable",
+        "Every failure can be traced to root cause and fix",
+        "Regression test requirement is explicit"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 4,
+      "name": "Add auto-generated remediation backlog",
+      "description": "When a validation fails, automatically create a remediation backlog entry with owner, scope, failing test, and exit criteria. Guidance: no failure is allowed to remain undocumented.",
+      "success_factors": [
+        "Failures produce backlog entries",
+        "Backlog items include clear exit criteria",
+        "Open remediations are visible in status reviews"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 5,
+      "name": "Add step-level failure triage checklist",
+      "description": "Create a triage checklist used whenever any step validation fails. Guidance: classify failures as spec gap, implementation bug, test bug, or fixture drift, then assign concrete follow-up.",
+      "success_factors": [
+        "Triage categories are explicit",
+        "Each failed step gets triage classification",
+        "Follow-up actions are unambiguous"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 6,
+      "name": "Add remediation regression test requirement",
+      "description": "Require every remediation to include a regression test before closure. Guidance: no remediation closes on code change alone.",
+      "success_factors": [
+        "Each remediation includes regression coverage",
+        "Regression tests fail before fix and pass after",
+        "Closure criteria enforce test-backed fixes"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 7,
+      "name": "Add pre-merge validation policy",
+      "description": "Define mandatory validations required before merging any parity-impacting change. Guidance: tie policy to step ids and parity checklist ids.",
+      "success_factors": [
+        "Policy is documented",
+        "Policy is enforced in CI",
+        "Merges are blocked on unmet validations"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 8,
+      "name": "Run phase gate dry run with seeded failures",
+      "description": "Intentionally seed known failures and confirm the validation plus remediation workflow catches and routes them correctly. Guidance: this validates the process itself before relying on it.",
+      "success_factors": [
+        "Seeded failures are detected",
+        "Remediation workflow triggers automatically",
+        "Process gaps are fixed"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 9,
+      "name": "Finalize continuous validation readiness",
+      "description": "Confirm step-level validation, phase gates, and remediation loops are operational before declaring implementation execution ready. Guidance: this is the readiness check for the whole delivery process.",
+      "success_factors": [
+        "Continuous validation is operational",
+        "Remediation loop is proven",
+        "Team can execute steps with confidence"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 10,
+      "name": "Pin Rust baseline",
+      "description": "Record the exact convex-rs commit hash and tag used as the parity reference. Guidance: save the hash in repo docs so all implementation and tests target one immutable source.",
+      "success_factors": [
+        "Reference commit hash is captured",
+        "Tag/version mapping is documented",
+        "No work proceeds against an unpinned baseline"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 11,
+      "name": "Build API parity matrix",
+      "description": "List every public Rust API symbol and map it to intended Go API shape. Guidance: include methods, types, constructors, callbacks, and stream contracts.",
+      "success_factors": [
+        "All public Rust APIs are mapped",
+        "Go equivalent exists or a justified note is added",
+        "Matrix is reviewable and complete"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 12,
+      "name": "Build protocol parity matrix",
+      "description": "Map all client/server wire message variants and fields from sync_types to Go representations. Guidance: include optional fields and defaulting behavior.",
+      "success_factors": [
+        "Every message variant is represented",
+        "Field naming and wire keys are captured",
+        "Known edge cases are documented"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 13,
+      "name": "Define validation policy",
+      "description": "Create a repo-level validation policy describing required checks per subsystem. Guidance: no step may be marked complete without an attached validation method.",
+      "success_factors": [
+        "Validation policy is written",
+        "Each subsystem has mandatory checks",
+        "Completion criteria are objective"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 14,
+      "name": "Add parity checklist artifact",
+      "description": "Create a machine-readable checklist that maps every parity item to at least one test. Guidance: keep item ids stable for CI reporting.",
+      "success_factors": [
+        "Every parity item has an id",
+        "Each id maps to test coverage",
+        "Checklist can be audited automatically"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 15,
+      "name": "Create Go module skeleton",
+      "description": "Create package layout for public API plus internal modules. Guidance: keep boundaries aligned to Rust domains (client, base state machine, protocol, sync transport, value).",
+      "success_factors": [
+        "Compilable module exists",
+        "Packages match architecture plan",
+        "No circular package dependencies"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 16,
+      "name": "Set up CI and quality gates",
+      "description": "Add CI tasks for unit tests, race detector, lint, and format checks. Guidance: keep gates mandatory before step completion in later phases.",
+      "success_factors": [
+        "CI runs go test and go test -race",
+        "Linting/format checks are enforced",
+        "Pipeline is green on baseline"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 17,
+      "name": "Add deterministic test utilities",
+      "description": "Introduce clock/rng abstractions for repeatable backoff and timeout tests. Guidance: avoid sleeping-based flaky tests where deterministic hooks are possible.",
+      "success_factors": [
+        "Deterministic rng is injectable",
+        "Deterministic time source is injectable",
+        "Foundational test helpers are documented"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 18,
+      "name": "Add API signature conformance tests",
+      "description": "Implement compile-time or reflection-based checks to ensure intended public API signatures remain intact. Guidance: fail fast on accidental API drift.",
+      "success_factors": [
+        "Public method signatures are asserted",
+        "CI fails on signature drift",
+        "Conformance tests are documented"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 19,
+      "name": "Add public type shape conformance tests",
+      "description": "Validate key exported types and enums/variants maintain expected structure. Guidance: include FunctionResult, Value, auth token types, and websocket state.",
+      "success_factors": [
+        "Type-shape tests cover all key exports",
+        "Variant drift is detected",
+        "Backward compatibility checks are explicit"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 20,
+      "name": "Implement Value type",
+      "description": "Create Go representation for Convex values: null, int64, float64, bool, string, bytes, array, object. Guidance: choose a shape that preserves type identity without ambiguity.",
+      "success_factors": [
+        "All Rust Value variants are represented",
+        "Constructors/helpers are clear",
+        "Type assertions are ergonomic"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 21,
+      "name": "Implement ConvexError and FunctionResult",
+      "description": "Add FunctionResult variants equivalent to Rust and conversion rules from error payloads. Guidance: preserve distinction between plain message errors and ConvexError data payloads.",
+      "success_factors": [
+        "FunctionResult parity is complete",
+        "Error payload conversion logic matches Rust",
+        "Debug/string formatting is acceptable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 22,
+      "name": "Encode Value to JSON wire format",
+      "description": "Implement value encoding rules including `$integer`, `$float`, `$bytes`. Guidance: preserve Rust behavior for NaN, infinities, and negative zero.",
+      "success_factors": [
+        "Special float handling matches Rust",
+        "Bytes/int64 wrappers are emitted correctly",
+        "Nested objects/arrays encode correctly"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 23,
+      "name": "Decode JSON wire format to Value",
+      "description": "Implement Value decode with strict validation and unsupported-type error behavior. Guidance: reject deprecated `$set` and `$map` the same way Rust does.",
+      "success_factors": [
+        "Decode paths handle all supported tags",
+        "Unsupported tags produce deterministic errors",
+        "Roundtrip decode behavior is stable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 24,
+      "name": "Add Value roundtrip tests",
+      "description": "Create unit and fuzz/property-style tests for Value encode/decode. Guidance: include trophy cases for edge float and nested payload structures.",
+      "success_factors": [
+        "Roundtrip tests pass",
+        "Edge-case trophies are covered",
+        "No flaky cases in CI"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 25,
+      "name": "Implement core protocol identifiers",
+      "description": "Add Go types for QueryId, SessionId, IdentityVersion, QuerySetVersion, StateVersion, Timestamp, and request sequence numbers. Guidance: keep conversion boundaries explicit.",
+      "success_factors": [
+        "All identifier types exist",
+        "Type conversions are tested",
+        "Timestamp min/succ semantics are defined"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 26,
+      "name": "Implement auth and identity structs",
+      "description": "Create AuthenticationToken variants and user identity attributes. Guidance: include admin acting-as payload and token none behavior.",
+      "success_factors": [
+        "Auth token variants match Rust",
+        "Acting-as fields serialize correctly",
+        "Default/empty semantics are tested"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 27,
+      "name": "Implement query and state modification types",
+      "description": "Port Query, QuerySetModification, StateModification, and related payload types. Guidance: mirror wire-facing field names and optional journals.",
+      "success_factors": [
+        "All core protocol structs compile",
+        "Optional fields are represented correctly",
+        "Type parity table marks this area complete"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 28,
+      "name": "Implement ClientMessage model",
+      "description": "Add all ClientMessage variants including Connect, ModifyQuerySet, Mutation, Action, Authenticate, and Event. Guidance: keep branch behavior explicit for serialization.",
+      "success_factors": [
+        "All variants are implemented",
+        "Optional payloads are represented",
+        "Compile-time checks prevent missing variants"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 29,
+      "name": "Implement ServerMessage model",
+      "description": "Add all ServerMessage variants including Transition, MutationResponse, ActionResponse, AuthError, FatalError, TransitionChunk, and Ping. Guidance: model success/error payload unions carefully.",
+      "success_factors": [
+        "All variants are implemented",
+        "Result payload forms are represented",
+        "Transition chunk path is captured"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 30,
+      "name": "Implement ClientMessage codec",
+      "description": "Write JSON marshal/unmarshal for client messages with Rust-compatible tags and field defaults. Guidance: reproduce base64 timestamp handling exactly where required.",
+      "success_factors": [
+        "All client variants encode/decode",
+        "Wire keys match Rust conventions",
+        "Known malformed payloads fail predictably"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 31,
+      "name": "Implement ServerMessage codec",
+      "description": "Write JSON marshal/unmarshal for server messages including success/error branches and optional fields. Guidance: keep error-data payload behavior identical to Rust.",
+      "success_factors": [
+        "All server variants encode/decode",
+        "Success and error branches are correct",
+        "Optional fields preserve parity"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 32,
+      "name": "Add golden protocol fixtures",
+      "description": "Create fixture tests to lock exact JSON shape for representative messages. Guidance: include every variant and at least one edge-case payload per variant family.",
+      "success_factors": [
+        "Golden fixture set is complete",
+        "Fixture diffs are easy to review",
+        "Codec regressions fail loudly"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 33,
+      "name": "Add protocol fixture generator from Rust",
+      "description": "Generate protocol fixture vectors from the Rust baseline to use as Go conformance data. Guidance: pin fixture generation to the baseline commit hash.",
+      "success_factors": [
+        "Fixture generator script exists",
+        "Fixtures are reproducible",
+        "Baseline commit linkage is captured"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 34,
+      "name": "Validate client message fixtures",
+      "description": "Run Go encode/decode checks against Rust-generated client message fixtures. Guidance: validate both directions and exact field presence.",
+      "success_factors": [
+        "All client fixture vectors pass",
+        "Encode output matches expected wire form",
+        "Decode behavior matches Rust"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 35,
+      "name": "Validate server message fixtures",
+      "description": "Run Go encode/decode checks against Rust-generated server message fixtures. Guidance: include success and error payload variants.",
+      "success_factors": [
+        "All server fixture vectors pass",
+        "Error payload branches are parity-correct",
+        "Optional field behavior is validated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 36,
+      "name": "Validate malformed protocol payloads",
+      "description": "Create negative tests for invalid/missing protocol fields and type mismatches. Guidance: errors should be deterministic and useful.",
+      "success_factors": [
+        "Malformed payload corpus is defined",
+        "Decoder rejects invalid inputs",
+        "Error classes are asserted"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 37,
+      "name": "Add fuzz tests for message codecs",
+      "description": "Fuzz client/server message JSON decode and encode paths. Guidance: focus on panics, hangs, and silently accepted invalid states.",
+      "success_factors": [
+        "Fuzz target compiles and runs in CI or nightly",
+        "No crashers remain",
+        "Corpus seeds include real fixtures"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 38,
+      "name": "Add fuzz tests for value codec",
+      "description": "Fuzz Value encode/decode including nested and edge numeric payloads. Guidance: include mixed object/array depth and invalid tag objects.",
+      "success_factors": [
+        "Fuzzing covers Value codec paths",
+        "No panics or corrupt states",
+        "Roundtrip invariants hold where applicable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 39,
+      "name": "Validate u64 base64 timestamp conversions",
+      "description": "Add exact-vector tests for timestamp base64 conversions used on the wire. Guidance: include min, max, and random boundary values.",
+      "success_factors": [
+        "Conversion vectors are exhaustive enough",
+        "Roundtrip is exact",
+        "Mismatch cases fail clearly"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 40,
+      "name": "Validate special float encode/decode matrix",
+      "description": "Validate NaN, +/-Inf, and -0 encoding rules against Rust behavior. Guidance: assert when `$float` must be used versus plain JSON number.",
+      "success_factors": [
+        "Special float matrix passes",
+        "Encoding form is parity-correct",
+        "Invalid float encodings are rejected"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 41,
+      "name": "Validate bytes encoding matrix",
+      "description": "Test byte-array wire encoding/decoding across sizes and values. Guidance: include empty, binary-heavy, and large payload cases.",
+      "success_factors": [
+        "Byte fixtures roundtrip correctly",
+        "Wire form matches Rust",
+        "Large payload behavior is stable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 42,
+      "name": "Validate integer boundary matrix",
+      "description": "Validate int64 boundary encoding and decoding at key limits. Guidance: include min/max int64 and near-boundary values.",
+      "success_factors": [
+        "Boundary vectors pass",
+        "No precision loss occurs",
+        "Wire tags are emitted correctly"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 43,
+      "name": "Validate nested object determinism",
+      "description": "Assert deterministic object serialization behavior for parity-sensitive tokenization paths. Guidance: verify map ordering does not alter canonical semantics.",
+      "success_factors": [
+        "Canonicalization is deterministic",
+        "Equivalent maps produce equal tokens",
+        "Tests prove order-insensitivity"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 44,
+      "name": "Validate unsupported $set/$map error parity",
+      "description": "Assert decode errors for deprecated `$set` and `$map` match intended behavior. Guidance: keep messages stable enough for debugging.",
+      "success_factors": [
+        "Unsupported tags are rejected",
+        "Errors indicate unsupported type",
+        "Parity with Rust behavior is verified"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 45,
+      "name": "Validation gate after protocol/value implementation",
+      "description": "Run full protocol/value conformance checks immediately after steps 20-44 and before continuing. Guidance: block progress until conformance and negative tests pass.",
+      "success_factors": [
+        "Protocol and value conformance pass",
+        "Negative payload tests pass",
+        "Any remediations are closed before proceeding"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 46,
+      "name": "Continuous parity diff checks against Rust",
+      "description": "Schedule periodic parity diff checks that compare current Go behavior against Rust baseline fixtures as implementation evolves. Guidance: run these checks at each phase gate.",
+      "success_factors": [
+        "Parity diff job exists",
+        "Diff results are reviewed at each gate",
+        "Unexpected drift triggers remediation"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 47,
+      "name": "Implement backoff with jitter",
+      "description": "Port backoff behavior including reset and failure-count progression. Guidance: match Rust timing formula and max cap semantics.",
+      "success_factors": [
+        "Backoff API mirrors intended use",
+        "Reset/fail behavior is tested",
+        "Deterministic rng tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 48,
+      "name": "Implement RequestManager",
+      "description": "Create request tracking for mutation/action with completion state, timestamps, and replay ordering. Guidance: keep pending/completed transitions explicit.",
+      "success_factors": [
+        "Track/update/remove flow works",
+        "Type mismatch and invalid id paths are handled",
+        "Replay list ordering is deterministic"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 49,
+      "name": "Test RequestManager semantics",
+      "description": "Add targeted tests for immediate action completion, errored mutation completion, and timestamp-gated mutation completion. Guidance: replicate Rust behavior test-by-test.",
+      "success_factors": [
+        "Completion timing matches Rust",
+        "Error paths are covered",
+        "Replay behavior is verified"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 50,
+      "name": "Create LocalSyncState skeleton",
+      "description": "Build internal state for query set, query ids, versions, latest results, and auth fetcher. Guidance: keep mutating operations confined to the base client worker owner.",
+      "success_factors": [
+        "State container compiles",
+        "Core fields match Rust concepts",
+        "Thread ownership rules are clear"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 51,
+      "name": "Implement query token canonicalization",
+      "description": "Port canonical `(udfPath,args)` token serialization used for dedupe. Guidance: maintain deterministic ordering for object keys and canonicalized path handling.",
+      "success_factors": [
+        "Equivalent queries map to same token",
+        "Distinct args map to distinct tokens",
+        "Token determinism is tested"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 52,
+      "name": "Implement subscribe path",
+      "description": "Port subscribe logic including dedupe, subscriber index incrementing, and outgoing ModifyQuerySet generation. Guidance: preserve subscriber-id uniqueness rules.",
+      "success_factors": [
+        "First subscription emits add message",
+        "Duplicate subscription dedupes query",
+        "Subscriber ids are unique and stable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 53,
+      "name": "Implement unsubscribe path",
+      "description": "Port unsubscribe behavior including remove message only when final subscriber is dropped. Guidance: ensure dropped unknown subscriber is treated as internal invariant failure.",
+      "success_factors": [
+        "Intermediate unsubscribes do not remove query",
+        "Final unsubscribe emits remove message",
+        "Subscriber tracking stays consistent"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 54,
+      "name": "Implement auth fetcher semantics",
+      "description": "Add set/clear auth fetcher behavior with immediate fetch (`force_refresh=false`) and stored callback for reconnect (`force_refresh=true`). Guidance: match base version increment behavior.",
+      "success_factors": [
+        "Initial auth send behavior is correct",
+        "Callback storage and refresh are correct",
+        "Clear auth path emits None token"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 55,
+      "name": "Implement transition ingest pipeline",
+      "description": "Port remote query set transition handling, version checks, and query result ingestion. Guidance: preserve start_version mismatch error behavior.",
+      "success_factors": [
+        "Version mismatch errors trigger reconnect path",
+        "State modifications update local results correctly",
+        "Observed timestamp updates correctly"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 56,
+      "name": "Implement response handling for non-transition messages",
+      "description": "Port mutation response, action response, auth error, fatal error, ping, and transition chunk behavior. Guidance: transition chunk must be treated as protocol error as in Rust.",
+      "success_factors": [
+        "Mutation/action response handling is correct",
+        "Auth/fatal errors surface reconnect reasons",
+        "Transition chunk path returns expected error"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 57,
+      "name": "Implement reconnect replay path",
+      "description": "Port resend logic that clears stale queue, regenerates auth/query messages, and appends ongoing mutations. Guidance: preserve stale-version bug fix behavior.",
+      "success_factors": [
+        "Queue is cleared before replay",
+        "Auth and query set are rebuilt correctly",
+        "Regression test for duplicate base_version passes"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 58,
+      "name": "Implement QueryResults view",
+      "description": "Add result-view structure mapping subscriber ids to query results with iterator-like access. Guidance: preserve behavior where subscriber may exist before first value arrives.",
+      "success_factors": [
+        "Get/len/isEmpty semantics match Rust intent",
+        "Iteration exposes subscribers with optional values",
+        "Snapshot clone behavior is reliable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 59,
+      "name": "Port BaseConvexClient test suite",
+      "description": "Write Go tests covering base state machine behaviors from Rust tests, including reconnect auth refresh and stale queue prevention. Guidance: use deterministic fake protocol messages.",
+      "success_factors": [
+        "Key Rust behavior tests are mirrored",
+        "Reconnect regressions are covered",
+        "Tests pass reliably under race detector"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 60,
+      "name": "Validate query token determinism across map ordering",
+      "description": "Explicitly test query token serialization when args map insertion order varies. Guidance: token equality must depend on content, not insertion history.",
+      "success_factors": [
+        "Token equality holds for equivalent args",
+        "Token inequality holds for distinct args",
+        "Regression test protects determinism"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 61,
+      "name": "Validate query dedupe behavior",
+      "description": "Test that duplicate subscribe calls dedupe query registration while maintaining independent subscribers. Guidance: ensure only required ModifyQuerySet messages are emitted.",
+      "success_factors": [
+        "Duplicate subscriptions share query id",
+        "No redundant add messages are sent",
+        "Subscriber tracking remains correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 62,
+      "name": "Validate subscriber id uniqueness under churn",
+      "description": "Stress subscribe/unsubscribe cycles to ensure subscriber id uniqueness and no collisions. Guidance: include rapid churn and same-query cycles.",
+      "success_factors": [
+        "No subscriber id collisions occur",
+        "High-churn tests are stable",
+        "Known Rust regression is guarded"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 63,
+      "name": "Validate unsubscribe decrement semantics",
+      "description": "Confirm intermediate unsubscribe operations decrement subscriber count without removing query. Guidance: inspect queue emissions and current results.",
+      "success_factors": [
+        "Intermediate unsubscribes avoid remove message",
+        "Query remains active for remaining subscribers",
+        "Local subscriber state remains consistent"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 64,
+      "name": "Validate final unsubscribe remove emission",
+      "description": "Confirm final subscriber drop emits exactly one remove modification. Guidance: check version transitions and no duplicate removes.",
+      "success_factors": [
+        "Final unsubscribe sends remove",
+        "Only one remove is emitted",
+        "Version increments are correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 65,
+      "name": "Validate query set version monotonicity",
+      "description": "Add invariant tests ensuring query set base/new versions move monotonically and consistently. Guidance: include add/remove/reconnect sequences.",
+      "success_factors": [
+        "Version monotonicity invariant holds",
+        "Base/new version relationships are valid",
+        "Reconnect cases are covered"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 66,
+      "name": "Validate identity version monotonicity",
+      "description": "Verify identity version updates for auth set/clear/refresh paths. Guidance: include callback and static token flows.",
+      "success_factors": [
+        "Identity versions increment correctly",
+        "Auth clear behavior is correct",
+        "Reconnect refresh semantics are validated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 67,
+      "name": "Validate auth callback immediate fetch behavior",
+      "description": "Ensure setting auth callback triggers immediate fetch with non-refresh flag. Guidance: assert invocation count and arguments.",
+      "success_factors": [
+        "Immediate callback invocation occurs",
+        "Force-refresh flag is false initially",
+        "Outgoing auth message is correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 68,
+      "name": "Validate auth callback refresh-on-reconnect behavior",
+      "description": "Ensure reconnect path invokes auth callback with refresh semantics and uses returned token. Guidance: verify replay message ordering too.",
+      "success_factors": [
+        "Reconnect callback invocation occurs",
+        "Force-refresh flag is true on reconnect",
+        "Refreshed token is sent"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 69,
+      "name": "Validate auth-clear behavior",
+      "description": "Validate clearing auth sends None token and resets state correctly. Guidance: include set->clear->set transitions.",
+      "success_factors": [
+        "Auth clear emits None token",
+        "State remains consistent after toggles",
+        "Subsequent auth set works"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 70,
+      "name": "Validate mutation response completion gate by transition",
+      "description": "Assert successful mutation completion waits for transition visibility semantics. Guidance: mimic Rust test timing behavior.",
+      "success_factors": [
+        "Mutation does not complete early",
+        "Completion occurs after appropriate transition",
+        "Timestamp gating logic is proven"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 71,
+      "name": "Validate mutation immediate completion on error",
+      "description": "Assert errored mutations complete immediately without waiting for transition. Guidance: include error payload forms.",
+      "success_factors": [
+        "Error mutations complete immediately",
+        "Error payload mapping is correct",
+        "No transition wait is required"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 72,
+      "name": "Validate action immediate completion",
+      "description": "Assert actions complete upon response and do not require transition gating. Guidance: cover success and failure action payloads.",
+      "success_factors": [
+        "Actions complete on response",
+        "Success and error actions are handled",
+        "No transition dependency exists"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 73,
+      "name": "Validate request replay ordering on reconnect",
+      "description": "Ensure replay ordering for ongoing requests matches expected semantics after reconnect. Guidance: assert deterministic ordering in tests.",
+      "success_factors": [
+        "Replay ordering is deterministic",
+        "Ordering aligns with spec",
+        "No duplicate request replay occurs"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 74,
+      "name": "Validate outgoing queue clear before replay",
+      "description": "Add regression tests for stale queue clearing before reconnect replay messages are enqueued. Guidance: explicitly reproduce prior stale-version failure mode.",
+      "success_factors": [
+        "Queue clear executes on replay",
+        "Stale version conflict is prevented",
+        "Regression test is stable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 75,
+      "name": "Validate max observed timestamp tracking",
+      "description": "Verify observed timestamp monotonic updates from transitions and mutation responses. Guidance: include mixed arrival order cases.",
+      "success_factors": [
+        "Observed timestamp monotonicity holds",
+        "Mixed source updates are correct",
+        "Reconnect requests carry correct value"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 76,
+      "name": "Validate transition start version mismatch failure",
+      "description": "Ensure transition start version mismatch produces protocol failure and reconnect path trigger. Guidance: assert specific failure classification.",
+      "success_factors": [
+        "Mismatch is detected reliably",
+        "Failure classification is correct",
+        "Reconnect path is initiated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 77,
+      "name": "Validate TransitionChunk rejection behavior",
+      "description": "Ensure TransitionChunk is rejected per Rust behavior for this client. Guidance: verify error propagation and recovery path.",
+      "success_factors": [
+        "TransitionChunk is rejected",
+        "Error message/class is expected",
+        "Recovery path works"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 78,
+      "name": "Validate Ping no-op behavior",
+      "description": "Confirm Ping messages do not mutate state or complete pending operations. Guidance: include high-frequency ping scenarios.",
+      "success_factors": [
+        "Ping is state-neutral",
+        "Pending operations are unaffected",
+        "High-frequency ping remains stable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 79,
+      "name": "Validation gate after base state machine implementation",
+      "description": "Run targeted base-client semantic tests immediately after steps 47-78. Guidance: include reconnect replay, versioning, mutation completion, and auth refresh behavior.",
+      "success_factors": [
+        "Base state-machine semantics match Rust",
+        "Reconnect regression suite passes",
+        "All discovered issues are remediated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 80,
+      "name": "Define SyncProtocol interface",
+      "description": "Create protocol interface and shared response/request types used by worker and websocket manager. Guidance: include reconnect request reason and max observed timestamp fields.",
+      "success_factors": [
+        "Interface supports open/send/reconnect",
+        "ProtocolResponse shapes are complete",
+        "All users compile against interface"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 81,
+      "name": "Implement deployment URL to WS URL conversion",
+      "description": "Port URL conversion logic from deployment HTTP(S) to websocket `/api/sync` endpoint. Guidance: preserve invalid scheme error behavior.",
+      "success_factors": [
+        "http/https/ws/wss map correctly",
+        "Path is forced to /api/sync",
+        "Unsupported schemes fail with clear error"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 82,
+      "name": "Implement websocket connect handshake",
+      "description": "Build ws manager open path with Convex-Client header and initial Connect message send. Guidance: include session id generation and reconnect metadata fields.",
+      "success_factors": [
+        "Connection opens successfully",
+        "Connect message emitted with required fields",
+        "Header behavior is validated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 83,
+      "name": "Implement websocket read and send loops",
+      "description": "Handle incoming text messages, decode to ServerMessage, and forward protocol responses while supporting outbound sends with acknowledgements. Guidance: keep send path non-blocking and error-aware.",
+      "success_factors": [
+        "Incoming messages are parsed and forwarded",
+        "Send acknowledgements are delivered",
+        "Close/message errors propagate correctly"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 84,
+      "name": "Implement heartbeat and inactivity logic",
+      "description": "Port heartbeat interval and server inactivity timeout handling. Guidance: on inactivity, trigger failure path that coordinates reconnect with the worker.",
+      "success_factors": [
+        "Heartbeat ticker runs correctly",
+        "Inactivity threshold triggers reconnect",
+        "Backoff reset/fail interactions are correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 85,
+      "name": "Validate websocket state callback transitions",
+      "description": "Validate emitted websocket states across connect, reconnect, and failure cycles. Guidance: assert ordering and repeat behavior.",
+      "success_factors": [
+        "State callbacks fire correctly",
+        "State ordering is correct",
+        "Reconnect cycles are covered"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 86,
+      "name": "Validate websocket inactivity timeout path",
+      "description": "Test inactivity threshold detection and transition into reconnect workflow. Guidance: use deterministic clock to avoid flakes.",
+      "success_factors": [
+        "Inactivity timeout is detected",
+        "Reconnect flow is triggered",
+        "Test is deterministic"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 87,
+      "name": "Validate websocket backoff growth and cap",
+      "description": "Verify exponential jittered backoff behavior and max cap under repeated failures. Guidance: use deterministic RNG for predictable assertions.",
+      "success_factors": [
+        "Backoff growth matches formula",
+        "Max cap is enforced",
+        "Deterministic assertions pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 88,
+      "name": "Validate websocket backoff reset after success",
+      "description": "Ensure backoff resets after healthy communication, matching Rust reset points. Guidance: assert failure count transitions.",
+      "success_factors": [
+        "Backoff resets after success",
+        "Failure count transitions are correct",
+        "Subsequent delay starts from baseline"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 89,
+      "name": "Validate websocket send failure propagation",
+      "description": "Test send path failures and verify error propagation through worker and reconnect logic. Guidance: include closed socket and transient send errors.",
+      "success_factors": [
+        "Send failures propagate correctly",
+        "Reconnect logic engages as expected",
+        "No deadlocks occur"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 90,
+      "name": "Validation gate after transport implementation",
+      "description": "Run transport-specific validation immediately after steps 80-89. Guidance: include heartbeat, inactivity timeout, send failures, and backoff progression checks.",
+      "success_factors": [
+        "Transport behavior checks pass",
+        "Timeout and failure paths are stable",
+        "No unresolved transport remediations remain"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 91,
+      "name": "Implement worker main loop",
+      "description": "Create worker orchestrating base client, protocol manager, and request channels. Guidance: match Rust order of operations, including pre-select message flush.",
+      "success_factors": [
+        "Worker loop processes protocol and client requests",
+        "Flush-before-select behavior is present",
+        "Reconnect orchestration follows Rust semantics"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 92,
+      "name": "Validate worker flush-before-select ordering",
+      "description": "Verify worker flushes queued outbound messages before normal select loop processing. Guidance: test with reconnect-generated queued work.",
+      "success_factors": [
+        "Flush occurs before select",
+        "Ordering matches intended semantics",
+        "Queued replay is sent predictably"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 93,
+      "name": "Validate protocol failure triggers reconnect request",
+      "description": "Ensure protocol failure responses trigger reconnect requests with reason and max observed timestamp. Guidance: assert exact reconnect payload fields.",
+      "success_factors": [
+        "Reconnect request is emitted",
+        "Reason field is populated correctly",
+        "Timestamp field matches base state"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 94,
+      "name": "Validate communicate loop handles responses during send",
+      "description": "Assert worker continues processing protocol responses while waiting for send completion. Guidance: protect against deadlock regression.",
+      "success_factors": [
+        "Responses are processed during send wait",
+        "Deadlock regression is prevented",
+        "Queue drain remains correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 95,
+      "name": "Validation gate after worker orchestration",
+      "description": "Run orchestration and ordering validations immediately after steps 91-94. Guidance: verify flush-before-select, response processing during send, and reconnect request propagation.",
+      "success_factors": [
+        "Worker ordering invariants pass",
+        "Deadlock regression checks pass",
+        "Issues found are remediated and re-tested"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 96,
+      "name": "Implement high-level ConvexClient and builder",
+      "description": "Expose high-level API constructors and configuration options (client id, state callback). Guidance: maintain one shared connection model across clones.",
+      "success_factors": [
+        "Builder options are wired",
+        "Client starts worker and protocol manager",
+        "Clone/share behavior is explicit and tested"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 97,
+      "name": "Implement subscriptions and watch_all",
+      "description": "Port single-query and query-set subscription abstractions with unsubscribe-on-drop/close behavior. Guidance: include initial value delivery semantics and lag handling strategy.",
+      "success_factors": [
+        "Subscribe returns stream-like updates",
+        "Dropping/closing unsubscribes correctly",
+        "watch_all returns consistent snapshots"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 98,
+      "name": "Implement query, mutation, action APIs",
+      "description": "Add high-level operation methods and map them to worker requests. Guidance: query must be sugar over subscribe-first-value behavior.",
+      "success_factors": [
+        "Query path behavior matches Rust",
+        "Mutation/action paths return expected results",
+        "Timeout/cancel behavior is documented"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 99,
+      "name": "Implement auth APIs",
+      "description": "Add set_auth, set_auth_callback, and admin auth helper behavior on top of worker auth requests. Guidance: static-token path should wrap callback semantics like Rust.",
+      "success_factors": [
+        "Static token and callback paths both work",
+        "Admin acting-as payload path works",
+        "Reconnect refresh path is verified"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 100,
+      "name": "Implement client lifecycle semantics",
+      "description": "Port drop/close behavior so final client reference tears down background resources safely. Guidance: avoid goroutine leaks and closed-channel panics.",
+      "success_factors": [
+        "Final close shuts down worker and transport",
+        "Subscription streams terminate predictably",
+        "Leak tests are clean"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 101,
+      "name": "Validate query sugar equals subscribe-first-value",
+      "description": "Test `Query` behavior equivalence to subscribe plus first stream item semantics. Guidance: verify both result and timing behavior.",
+      "success_factors": [
+        "Result equivalence is proven",
+        "Timing/ordering is equivalent",
+        "Regression guard test exists"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 102,
+      "name": "Validate watch_all consistency snapshots",
+      "description": "Assert watch_all emits consistent cross-query snapshots with correct subscriber/result mapping. Guidance: include partial update and missing-value states.",
+      "success_factors": [
+        "Snapshot consistency holds",
+        "Subscriber/result mapping is correct",
+        "Partial states are represented as expected"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 103,
+      "name": "Validate clone shares connection and subscriptions",
+      "description": "Ensure client clone semantics share underlying connection and active subscription state. Guidance: verify operations from multiple clones interoperate correctly.",
+      "success_factors": [
+        "Clone uses shared connection model",
+        "Cross-clone operations are consistent",
+        "No duplicate transport instances are created"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 104,
+      "name": "Validate final client close semantics and stream termination",
+      "description": "Verify last client close tears down background routines and closes subscription streams predictably. Guidance: include goroutine leak checks.",
+      "success_factors": [
+        "Final close tears down resources",
+        "Streams terminate predictably",
+        "Leak checks pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 105,
+      "name": "Validation gate after high-level API implementation",
+      "description": "Run high-level API behavior checks immediately after steps 96-104. Guidance: include clone semantics, query sugar behavior, and subscription lifecycle behavior.",
+      "success_factors": [
+        "High-level API parity checks pass",
+        "Lifecycle/close semantics are validated",
+        "API-level remediations are closed"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 106,
+      "name": "Build test protocol manager",
+      "description": "Create fake protocol manager for deterministic unit tests, equivalent to Rust testing sync manager. Guidance: include sent-message capture and fake server response injection.",
+      "success_factors": [
+        "Fake manager supports open/send/reconnect hooks",
+        "Sent-message inspection is stable",
+        "Worker tests use this harness successfully"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 107,
+      "name": "Port high-level client behavior tests",
+      "description": "Translate Rust client behavior tests to Go covering subscribe patterns, query sugar, mutation/action semantics, auth, and URL conversion. Guidance: keep one-to-one intent with Rust tests.",
+      "success_factors": [
+        "Core Rust behavior tests are mirrored",
+        "All parity-critical cases pass",
+        "Race detector passes for client tests"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 108,
+      "name": "Validation gate after test harness implementation",
+      "description": "After steps 106-107, run meta-validation to ensure tests themselves match intended Rust behavior and catch expected regressions. Guidance: validate test quality, not only implementation code.",
+      "success_factors": [
+        "Behavior tests are trustworthy",
+        "Known seeded regressions are caught",
+        "Test harness drift is prevented"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 109,
+      "name": "Add integration tests against live Convex",
+      "description": "Add opt-in integration tests that run query/mutation/action/subscribe against a real deployment. Guidance: gate with env vars and isolate test data names.",
+      "success_factors": [
+        "Integration tests run when configured",
+        "Realtime update flow is validated",
+        "Reconnect scenario is covered"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 110,
+      "name": "Write examples and API docs",
+      "description": "Provide quickstart and chat-style examples equivalent to Rust examples. Guidance: include builder/auth usage and subscription loop examples.",
+      "success_factors": [
+        "Examples compile and run",
+        "Public API docs are complete",
+        "Docs include realtime and auth patterns"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 111,
+      "name": "Finalize parity audit and release gate",
+      "description": "Run final parity audit against matrices and close gaps before release candidate. Guidance: unresolved differences require explicit sign-off with rationale.",
+      "success_factors": [
+        "Parity matrix is fully checked",
+        "All tests and CI gates are green",
+        "Release candidate is ready"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 112,
+      "name": "Final validation gate: race, integration, parity signoff",
+      "description": "Run full validation suite including race tests, integration tests, and parity checklist signoff. Guidance: block release unless every checklist id is verified.",
+      "success_factors": [
+        "`go test -race ./...` passes",
+        "Integration suite passes in configured environment",
+        "Parity checklist reaches full signoff"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 113,
+      "name": "Add weekly conformance sweep",
+      "description": "Run a full conformance sweep at regular cadence during development, not just near release. Guidance: include protocol fixtures, semantic tests, race tests, and integration smoke tests.",
+      "success_factors": [
+        "Sweep runs on schedule",
+        "Results are tracked over time",
+        "New failures create remediation entries"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 114,
+      "name": "Add exception handling policy for unavoidable drift",
+      "description": "Define a strict process for documenting, approving, and tracking any temporary drift from Rust behavior. Guidance: each exception must include owner, rationale, and retirement date.",
+      "success_factors": [
+        "Exception policy exists",
+        "All drifts are explicitly tracked",
+        "Retirement plan exists for each exception"
+      ],
+      "completed": false
+    }
+  ],
+  "ordering_policy": "The steps array order is the execution order and serial values are sequential IDs.",
+  "continuous_validation_schedule": {
+    "phase_gate_after_serial": {
+      "44": [
+        45,
+        46
+      ],
+      "78": [
+        79,
+        46
+      ],
+      "89": [
+        90,
+        46
+      ],
+      "94": [
+        95,
+        46
+      ],
+      "104": [
+        105,
+        46
+      ],
+      "107": [
+        108,
+        46
+      ]
+    },
+    "cadence_steps": [
+      113,
+      114
+    ]
+  }
+}
