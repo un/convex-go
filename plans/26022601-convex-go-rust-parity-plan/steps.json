@@ -1178,7 +1178,7 @@
         "All parity-critical cases pass",
         "Race detector passes for client tests"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 108,
