@@ -595,7 +595,7 @@
         "Callback storage and refresh are correct",
         "Clear auth path emits None token"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 55,
