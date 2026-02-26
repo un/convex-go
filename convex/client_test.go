@@ -120,12 +120,12 @@ func newSyncTestServer(t *testing.T) *httptest.Server {
 						StartVersion: &protocol.StateVersion{
 							QuerySet: 0,
 							Identity: 0,
-							TS:       protocol.EncodeTimestamp(0),
+							TS:       protocol.NewTimestamp(0),
 						},
 						EndVersion: &protocol.StateVersion{
 							QuerySet: 1,
 							Identity: 0,
-							TS:       protocol.EncodeTimestamp(1),
+							TS:       protocol.NewTimestamp(1),
 						},
 						Modifications: []protocol.StateModification{{
 							Type:    "QueryUpdated",
@@ -165,8 +165,8 @@ func newSyncTestServer(t *testing.T) *httptest.Server {
 
 				transition := protocol.ServerMessage{
 					Type:         "Transition",
-					StartVersion: &protocol.StateVersion{TS: protocol.EncodeTimestamp(1)},
-					EndVersion:   &protocol.StateVersion{TS: protocol.EncodeTimestamp(2)},
+					StartVersion: &protocol.StateVersion{TS: protocol.NewTimestamp(1)},
+					EndVersion:   &protocol.StateVersion{TS: protocol.NewTimestamp(2)},
 				}
 				transitionBytes, err := protocol.EncodeServerMessage(transition)
 				if err != nil {

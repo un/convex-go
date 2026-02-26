@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 7 state-version-and-timestamp-encoding
+- Context: `StateVersion.ts` was treated as an unvalidated string, so malformed wire timestamps could leak into runtime state.
+- Learning: Moving timestamp validation into `StateVersion.UnmarshalJSON` centralizes correctness and removes per-call decode branching.
+- Impact on next steps: Protocol decode paths can trust typed `StateVersion` objects and focus on variant semantics.
+
 ## 2026-02-26 Step 6 strict-protocol-identifiers
 - Context: Runtime code used ad-hoc numeric casts (`uint64`<->`uint32`) at many protocol boundaries.
 - Learning: Centralized conversion helpers with overflow checks remove silent truncation risk and make identifier misuse testable.

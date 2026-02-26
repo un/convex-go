@@ -36,10 +36,10 @@ func EncodeTimestamp(ts uint64) string {
 func DecodeTimestamp(value string) (uint64, error) {
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("timestamp must be base64: %w", err)
 	}
 	if len(decoded) != 8 {
-		return 0, fmt.Errorf("timestamp must decode to 8 bytes")
+		return 0, fmt.Errorf("timestamp must decode to 8 bytes, got %d", len(decoded))
 	}
 	return binary.LittleEndian.Uint64(decoded), nil
 }

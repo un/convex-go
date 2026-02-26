@@ -78,7 +78,7 @@
         "StateVersion wire shape is exact",
         "Invalid timestamps fail deterministically"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 8,

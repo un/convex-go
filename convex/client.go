@@ -418,10 +418,8 @@ func (c *Client) handleTransition(message protocol.ServerMessage) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if message.EndVersion != nil && message.EndVersion.TS != "" {
-		if ts, err := protocol.DecodeTimestamp(message.EndVersion.TS); err == nil {
-			c.state.UpdateObservedTimestamp(ts)
-		}
+	if message.EndVersion != nil {
+		c.state.UpdateObservedTimestamp(message.EndVersion.TS.Uint64())
 	}
 
 	for _, modification := range message.Modifications {

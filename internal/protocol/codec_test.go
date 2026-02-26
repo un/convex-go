@@ -1,6 +1,9 @@
 package protocol
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestClientMessageCodecRoundTrip(t *testing.T) {
 	in := ClientMessage{Type: "Connect", SessionID: SessionID("session"), ConnectionCount: 1}
@@ -28,5 +31,42 @@ func TestTimestampBase64RoundTrip(t *testing.T) {
 		if decoded != value {
 			t.Fatalf("roundtrip mismatch: got %d want %d", decoded, value)
 		}
+	}
+}
+
+func TestStateVersionTimestampWireShape(t *testing.T) {
+	version := StateVersion{
+		QuerySet: NewQuerySetVersion(3),
+		Identity: NewIdentityVersion(5),
+		TS:       NewTimestamp(11),
+	}
+	raw, err := json.Marshal(version)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+
+	var wire map[string]any
+	if err := json.Unmarshal(raw, &wire); err != nil {
+		t.Fatalf("unmarshal wire map failed: %v", err)
+	}
+	if wire["ts"] != EncodeTimestamp(11) {
+		t.Fatalf("unexpected ts wire value: %v", wire["ts"])
+	}
+
+	var decoded StateVersion
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		t.Fatalf("state version decode failed: %v", err)
+	}
+	if decoded.QuerySet != version.QuerySet || decoded.Identity != version.Identity || decoded.TS != version.TS {
+		t.Fatalf("decoded state version mismatch: got %+v want %+v", decoded, version)
+	}
+}
+
+func TestStateVersionRejectsInvalidTimestamp(t *testing.T) {
+	raw := []byte(`{"querySet":1,"identity":2,"ts":"bad"}`)
+	var version StateVersion
+	err := json.Unmarshal(raw, &version)
+	if err == nil {
+		t.Fatalf("expected invalid timestamp error")
 	}
 }

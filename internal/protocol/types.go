@@ -1,6 +1,9 @@
 package protocol
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type QueryID uint32
 type SessionID string
@@ -12,7 +15,36 @@ type RequestSequenceNumber uint32
 type StateVersion struct {
 	QuerySet QuerySetVersion `json:"querySet"`
 	Identity IdentityVersion `json:"identity"`
+	TS       Timestamp       `json:"-"`
+}
+
+type stateVersionJSON struct {
+	QuerySet QuerySetVersion `json:"querySet"`
+	Identity IdentityVersion `json:"identity"`
 	TS       string          `json:"ts"`
+}
+
+func (version StateVersion) MarshalJSON() ([]byte, error) {
+	return json.Marshal(stateVersionJSON{
+		QuerySet: version.QuerySet,
+		Identity: version.Identity,
+		TS:       EncodeTimestamp(version.TS.Uint64()),
+	})
+}
+
+func (version *StateVersion) UnmarshalJSON(data []byte) error {
+	var wire stateVersionJSON
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	ts, err := DecodeTimestamp(wire.TS)
+	if err != nil {
+		return fmt.Errorf("invalid state version timestamp: %w", err)
+	}
+	version.QuerySet = wire.QuerySet
+	version.Identity = wire.Identity
+	version.TS = NewTimestamp(ts)
+	return nil
 }
 
 type Query struct {
