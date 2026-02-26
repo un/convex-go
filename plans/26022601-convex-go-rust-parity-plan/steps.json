@@ -958,7 +958,7 @@
         "Max cap is enforced",
         "Deterministic assertions pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 88,
