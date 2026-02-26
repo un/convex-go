@@ -573,7 +573,7 @@
         "Duplicate subscription dedupes query",
         "Subscriber ids are unique and stable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 53,
