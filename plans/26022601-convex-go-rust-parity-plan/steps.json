@@ -111,7 +111,7 @@
         "Tag/version mapping is documented",
         "No work proceeds against an unpinned baseline"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 11,
