@@ -1167,7 +1167,7 @@
         "Sent-message inspection is stable",
         "Worker tests use this harness successfully"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 107,
