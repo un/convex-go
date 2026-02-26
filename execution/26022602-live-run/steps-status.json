@@ -13,8 +13,10 @@
     {
       "serial": 2,
       "name": "Create scaffold-gap inventory",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 3,
