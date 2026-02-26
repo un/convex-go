@@ -1244,7 +1244,7 @@
         "Results are tracked over time",
         "New failures create remediation entries"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 114,
