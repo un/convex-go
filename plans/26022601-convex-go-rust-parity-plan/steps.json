@@ -804,7 +804,7 @@
         "Ordering aligns with spec",
         "No duplicate request replay occurs"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 74,

@@ -1,3 +1,8 @@
+## 2026-02-26 Step 73 validate-request-replay-ordering-on-reconnect
+- Context: Validate request replay ordering on reconnect
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 72 validate-action-immediate-completion
 - Context: Validate action immediate completion
 - Learning: Validation and evidence-first execution keeps each step auditable.
