@@ -254,8 +254,10 @@
     {
       "serial": 32,
       "name": "Implement auth callback semantics in base state",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 33,
