@@ -166,7 +166,7 @@
         "Packages match architecture plan",
         "No circular package dependencies"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 16,
