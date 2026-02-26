@@ -155,7 +155,7 @@
         "Success/error unions are explicit",
         "Optional fields are validated"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 15,

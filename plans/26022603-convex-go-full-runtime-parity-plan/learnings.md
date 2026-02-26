@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 14 servermessage-remaining-variants
+- Context: Response/error server variants still allowed malformed unions and unknown message types to slip through decode.
+- Learning: Strict per-variant decode checks (including success/error union requirements) make protocol failures deterministic and actionable.
+- Impact on next steps: Codec-level strictness now supports implementing explicit encode/decode gates and malformed corpus testing.
+
 ## 2026-02-26 Step 13 servermessage-transition-and-chunk-variants
 - Context: Transition and chunk payloads were decoded permissively, which could hide malformed stream state.
 - Learning: Strict required-field validation on transition/chunk variants catches framing errors early and gives deterministic failure paths.

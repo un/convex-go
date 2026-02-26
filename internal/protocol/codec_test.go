@@ -377,3 +377,77 @@ func TestServerTransitionChunkRejectsMalformedPayload(t *testing.T) {
 		}
 	}
 }
+
+func TestServerRemainingVariantsRoundTrip(t *testing.T) {
+	success := true
+	mutation := ServerMessage{
+		Type:      "MutationResponse",
+		RequestID: NewRequestSequenceNumber(1),
+		Success:   &success,
+		Result:    json.RawMessage(`{"ok":true}`),
+		TS:        EncodeTimestamp(9),
+	}
+	encodedMutation, err := EncodeServerMessage(mutation)
+	if err != nil {
+		t.Fatalf("encode mutation response failed: %v", err)
+	}
+	if _, err := DecodeServerMessage(encodedMutation); err != nil {
+		t.Fatalf("decode mutation response failed: %v", err)
+	}
+
+	action := ServerMessage{
+		Type:      "ActionResponse",
+		RequestID: NewRequestSequenceNumber(2),
+		Success:   &success,
+		Result:    json.RawMessage(`{"ok":true}`),
+	}
+	encodedAction, err := EncodeServerMessage(action)
+	if err != nil {
+		t.Fatalf("encode action response failed: %v", err)
+	}
+	if _, err := DecodeServerMessage(encodedAction); err != nil {
+		t.Fatalf("decode action response failed: %v", err)
+	}
+
+	authError := ServerMessage{Type: "AuthError", Error: "expired"}
+	encodedAuthError, err := EncodeServerMessage(authError)
+	if err != nil {
+		t.Fatalf("encode auth error failed: %v", err)
+	}
+	if _, err := DecodeServerMessage(encodedAuthError); err != nil {
+		t.Fatalf("decode auth error failed: %v", err)
+	}
+
+	fatalError := ServerMessage{Type: "FatalError", Error: "fatal"}
+	encodedFatal, err := EncodeServerMessage(fatalError)
+	if err != nil {
+		t.Fatalf("encode fatal error failed: %v", err)
+	}
+	if _, err := DecodeServerMessage(encodedFatal); err != nil {
+		t.Fatalf("decode fatal error failed: %v", err)
+	}
+
+	ping := ServerMessage{Type: "Ping"}
+	encodedPing, err := EncodeServerMessage(ping)
+	if err != nil {
+		t.Fatalf("encode ping failed: %v", err)
+	}
+	if _, err := DecodeServerMessage(encodedPing); err != nil {
+		t.Fatalf("decode ping failed: %v", err)
+	}
+}
+
+func TestServerRemainingVariantsRejectMalformedPayload(t *testing.T) {
+	tests := [][]byte{
+		[]byte(`{"type":"MutationResponse","requestId":1}`),
+		[]byte(`{"type":"ActionResponse","requestId":1,"success":false}`),
+		[]byte(`{"type":"AuthError"}`),
+		[]byte(`{"type":"FatalError"}`),
+		[]byte(`{"type":"UnknownType"}`),
+	}
+	for _, raw := range tests {
+		if _, err := DecodeServerMessage(raw); err == nil {
+			t.Fatalf("expected malformed decode failure for payload %s", string(raw))
+		}
+	}
+}

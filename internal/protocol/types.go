@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type QueryID uint32
@@ -828,9 +829,55 @@ func (msg ServerMessage) MarshalJSON() ([]byte, error) {
 			TotalParts:   &totalParts,
 			TransitionID: &transitionID,
 		})
+	case "MutationResponse":
+		if msg.Success == nil {
+			return nil, fmt.Errorf("mutation response missing success")
+		}
+		requestID := msg.RequestID
+		payload := serverMessageJSON{
+			Type:      "MutationResponse",
+			RequestID: &requestID,
+			Success:   msg.Success,
+			Result:    msg.Result,
+			ErrorData: msg.ErrorData,
+			Error:     msg.Error,
+		}
+		if msg.TS != "" {
+			payload.TS = &msg.TS
+		}
+		return json.Marshal(payload)
+	case "ActionResponse":
+		if msg.Success == nil {
+			return nil, fmt.Errorf("action response missing success")
+		}
+		requestID := msg.RequestID
+		return json.Marshal(serverMessageJSON{
+			Type:      "ActionResponse",
+			RequestID: &requestID,
+			Success:   msg.Success,
+			Result:    msg.Result,
+			ErrorData: msg.ErrorData,
+			Error:     msg.Error,
+		})
+	case "AuthError":
+		if msg.Error == "" {
+			return nil, fmt.Errorf("auth error message missing error")
+		}
+		return json.Marshal(serverMessageJSON{
+			Type:                "AuthError",
+			Error:               msg.Error,
+			BaseVersion:         msg.BaseVersion,
+			AuthUpdateAttempted: msg.AuthUpdateAttempted,
+		})
+	case "FatalError":
+		if msg.Error == "" {
+			return nil, fmt.Errorf("fatal error message missing error")
+		}
+		return json.Marshal(serverMessageJSON{Type: "FatalError", Error: msg.Error})
+	case "Ping":
+		return json.Marshal(serverMessageJSON{Type: "Ping"})
 	default:
-		type alias ServerMessage
-		return json.Marshal(alias(msg))
+		return nil, fmt.Errorf("unknown server message type %q", msg.Type)
 	}
 }
 
@@ -888,13 +935,58 @@ func (msg *ServerMessage) UnmarshalJSON(data []byte) error {
 		msg.TotalParts = *payload.TotalParts
 		msg.TransitionID = *payload.TransitionID
 		return nil
-	default:
-		type alias ServerMessage
-		var decoded alias
-		if err := json.Unmarshal(data, &decoded); err != nil {
+	case "MutationResponse", "ActionResponse":
+		var payload serverMessageJSON
+		if err := json.Unmarshal(data, &payload); err != nil {
 			return err
 		}
-		*msg = ServerMessage(decoded)
+		if payload.RequestID == nil {
+			return fmt.Errorf("%s missing requestId", strings.ToLower(base.Type))
+		}
+		if payload.Success == nil {
+			return fmt.Errorf("%s missing success", strings.ToLower(base.Type))
+		}
+		if !*payload.Success && len(payload.Result) == 0 && payload.Error == "" {
+			return fmt.Errorf("%s error response missing result/error", strings.ToLower(base.Type))
+		}
+		msg.Type = base.Type
+		msg.RequestID = *payload.RequestID
+		msg.Success = payload.Success
+		msg.Result = payload.Result
+		msg.ErrorData = payload.ErrorData
+		msg.Error = payload.Error
+		if payload.TS != nil {
+			msg.TS = *payload.TS
+		}
 		return nil
+	case "AuthError":
+		var payload serverMessageJSON
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.Error == "" {
+			return fmt.Errorf("auth error message missing error")
+		}
+		msg.Type = "AuthError"
+		msg.Error = payload.Error
+		msg.BaseVersion = payload.BaseVersion
+		msg.AuthUpdateAttempted = payload.AuthUpdateAttempted
+		return nil
+	case "FatalError":
+		var payload serverMessageJSON
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.Error == "" {
+			return fmt.Errorf("fatal error message missing error")
+		}
+		msg.Type = "FatalError"
+		msg.Error = payload.Error
+		return nil
+	case "Ping":
+		msg.Type = "Ping"
+		return nil
+	default:
+		return fmt.Errorf("unknown server message type %q", base.Type)
 	}
 }
