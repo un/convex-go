@@ -278,8 +278,11 @@
     {
       "serial": 35,
       "name": "Port base state machine behavior tests",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./...",
+        "go test -race ./..."
+      ]
     },
     {
       "serial": 36,
