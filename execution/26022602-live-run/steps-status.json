@@ -319,8 +319,10 @@
     {
       "serial": 40,
       "name": "Implement protocol-failure reconnect propagation",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 41,
