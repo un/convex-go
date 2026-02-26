@@ -360,8 +360,10 @@
     {
       "serial": 45,
       "name": "Implement real Mutation and Action APIs",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 46,
