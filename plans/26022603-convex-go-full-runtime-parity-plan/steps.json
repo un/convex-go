@@ -144,7 +144,7 @@
         "Chunk metadata is complete",
         "Decode failures are deterministic"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 14,

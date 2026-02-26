@@ -329,3 +329,51 @@ func TestClientMessageVariantValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestServerTransitionAndChunkVariants(t *testing.T) {
+	transition := ServerMessage{
+		Type:         "Transition",
+		StartVersion: &StateVersion{QuerySet: NewQuerySetVersion(0), Identity: NewIdentityVersion(0), TS: NewTimestamp(1)},
+		EndVersion:   &StateVersion{QuerySet: NewQuerySetVersion(1), Identity: NewIdentityVersion(0), TS: NewTimestamp(2)},
+		Modifications: []StateModification{
+			NewStateModificationQueryRemoved(NewQueryID(7)),
+		},
+	}
+	encodedTransition, err := EncodeServerMessage(transition)
+	if err != nil {
+		t.Fatalf("encode transition failed: %v", err)
+	}
+	decodedTransition, err := DecodeServerMessage(encodedTransition)
+	if err != nil {
+		t.Fatalf("decode transition failed: %v", err)
+	}
+	if decodedTransition.Type != "Transition" || decodedTransition.StartVersion == nil || decodedTransition.EndVersion == nil {
+		t.Fatalf("decoded transition missing required fields")
+	}
+
+	chunk := ServerMessage{Type: "TransitionChunk", Chunk: "abc", PartNumber: 0, TotalParts: 2, TransitionID: "tr-1"}
+	encodedChunk, err := EncodeServerMessage(chunk)
+	if err != nil {
+		t.Fatalf("encode transition chunk failed: %v", err)
+	}
+	decodedChunk, err := DecodeServerMessage(encodedChunk)
+	if err != nil {
+		t.Fatalf("decode transition chunk failed: %v", err)
+	}
+	if decodedChunk.TransitionID != "tr-1" {
+		t.Fatalf("unexpected decoded transition id: %s", decodedChunk.TransitionID)
+	}
+}
+
+func TestServerTransitionChunkRejectsMalformedPayload(t *testing.T) {
+	tests := [][]byte{
+		[]byte(`{"type":"TransitionChunk","partNumber":0,"totalParts":2,"transitionId":"x"}`),
+		[]byte(`{"type":"TransitionChunk","chunk":"x","partNumber":2,"totalParts":2,"transitionId":"x"}`),
+		[]byte(`{"type":"Transition","endVersion":{"querySet":0,"identity":0,"ts":"AAAAAAAAAAA="},"modifications":[]}`),
+	}
+	for _, raw := range tests {
+		if _, err := DecodeServerMessage(raw); err == nil {
+			t.Fatalf("expected decode failure for malformed server payload %s", string(raw))
+		}
+	}
+}

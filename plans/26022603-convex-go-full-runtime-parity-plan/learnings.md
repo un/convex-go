@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 13 servermessage-transition-and-chunk-variants
+- Context: Transition and chunk payloads were decoded permissively, which could hide malformed stream state.
+- Learning: Strict required-field validation on transition/chunk variants catches framing errors early and gives deterministic failure paths.
+- Impact on next steps: Apply strict variant validation to the remaining server message unions (responses/errors/ping).
+
 ## 2026-02-26 Step 12 clientmessage-remaining-variants
 - Context: Non-connect client messages were still loosely marshaled, allowing invalid shapes through encode/decode paths.
 - Learning: Full variant-specific validation in `ClientMessage` custom JSON logic catches malformed requests at the protocol boundary.

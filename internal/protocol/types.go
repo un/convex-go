@@ -766,3 +766,135 @@ type ServerMessage struct {
 	TotalParts          uint32                `json:"totalParts,omitempty"`
 	TransitionID        string                `json:"transitionId,omitempty"`
 }
+
+type serverMessageJSON struct {
+	Type                string                 `json:"type"`
+	StartVersion        *StateVersion          `json:"startVersion,omitempty"`
+	EndVersion          *StateVersion          `json:"endVersion,omitempty"`
+	Modifications       []StateModification    `json:"modifications,omitempty"`
+	RequestID           *RequestSequenceNumber `json:"requestId,omitempty"`
+	Success             *bool                  `json:"success,omitempty"`
+	Result              json.RawMessage        `json:"result,omitempty"`
+	TS                  *string                `json:"ts,omitempty"`
+	ErrorData           json.RawMessage        `json:"errorData,omitempty"`
+	Error               string                 `json:"error,omitempty"`
+	BaseVersion         *IdentityVersion       `json:"baseVersion,omitempty"`
+	AuthUpdateAttempted *bool                  `json:"authUpdateAttempted,omitempty"`
+	Chunk               *string                `json:"chunk,omitempty"`
+	PartNumber          *uint32                `json:"partNumber,omitempty"`
+	TotalParts          *uint32                `json:"totalParts,omitempty"`
+	TransitionID        *string                `json:"transitionId,omitempty"`
+}
+
+func (msg ServerMessage) MarshalJSON() ([]byte, error) {
+	switch msg.Type {
+	case "Transition":
+		if msg.StartVersion == nil {
+			return nil, fmt.Errorf("transition message missing startVersion")
+		}
+		if msg.EndVersion == nil {
+			return nil, fmt.Errorf("transition message missing endVersion")
+		}
+		if msg.Modifications == nil {
+			return nil, fmt.Errorf("transition message missing modifications")
+		}
+		return json.Marshal(serverMessageJSON{
+			Type:          "Transition",
+			StartVersion:  msg.StartVersion,
+			EndVersion:    msg.EndVersion,
+			Modifications: msg.Modifications,
+		})
+	case "TransitionChunk":
+		if msg.Chunk == "" {
+			return nil, fmt.Errorf("transition chunk message missing chunk")
+		}
+		if msg.TransitionID == "" {
+			return nil, fmt.Errorf("transition chunk message missing transitionId")
+		}
+		if msg.TotalParts == 0 {
+			return nil, fmt.Errorf("transition chunk message missing totalParts")
+		}
+		if msg.PartNumber >= msg.TotalParts {
+			return nil, fmt.Errorf("transition chunk partNumber %d out of range for totalParts %d", msg.PartNumber, msg.TotalParts)
+		}
+		partNumber := msg.PartNumber
+		totalParts := msg.TotalParts
+		chunk := msg.Chunk
+		transitionID := msg.TransitionID
+		return json.Marshal(serverMessageJSON{
+			Type:         "TransitionChunk",
+			Chunk:        &chunk,
+			PartNumber:   &partNumber,
+			TotalParts:   &totalParts,
+			TransitionID: &transitionID,
+		})
+	default:
+		type alias ServerMessage
+		return json.Marshal(alias(msg))
+	}
+}
+
+func (msg *ServerMessage) UnmarshalJSON(data []byte) error {
+	var base struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &base); err != nil {
+		return err
+	}
+
+	switch base.Type {
+	case "Transition":
+		var payload serverMessageJSON
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.StartVersion == nil {
+			return fmt.Errorf("transition message missing startVersion")
+		}
+		if payload.EndVersion == nil {
+			return fmt.Errorf("transition message missing endVersion")
+		}
+		if payload.Modifications == nil {
+			return fmt.Errorf("transition message missing modifications")
+		}
+		msg.Type = "Transition"
+		msg.StartVersion = payload.StartVersion
+		msg.EndVersion = payload.EndVersion
+		msg.Modifications = payload.Modifications
+		return nil
+	case "TransitionChunk":
+		var payload serverMessageJSON
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.Chunk == nil || *payload.Chunk == "" {
+			return fmt.Errorf("transition chunk message missing chunk")
+		}
+		if payload.PartNumber == nil {
+			return fmt.Errorf("transition chunk message missing partNumber")
+		}
+		if payload.TotalParts == nil || *payload.TotalParts == 0 {
+			return fmt.Errorf("transition chunk message missing totalParts")
+		}
+		if payload.TransitionID == nil || *payload.TransitionID == "" {
+			return fmt.Errorf("transition chunk message missing transitionId")
+		}
+		if *payload.PartNumber >= *payload.TotalParts {
+			return fmt.Errorf("transition chunk partNumber %d out of range for totalParts %d", *payload.PartNumber, *payload.TotalParts)
+		}
+		msg.Type = "TransitionChunk"
+		msg.Chunk = *payload.Chunk
+		msg.PartNumber = *payload.PartNumber
+		msg.TotalParts = *payload.TotalParts
+		msg.TransitionID = *payload.TransitionID
+		return nil
+	default:
+		type alias ServerMessage
+		var decoded alias
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		*msg = ServerMessage(decoded)
+		return nil
+	}
+}
