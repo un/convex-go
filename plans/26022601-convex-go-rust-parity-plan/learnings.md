@@ -1,3 +1,8 @@
+## 2026-02-26 Step 63 validate-unsubscribe-decrement-semantics
+- Context: Validate unsubscribe decrement semantics
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 62 validate-subscriber-id-uniqueness-under-churn
 - Context: Validate subscriber id uniqueness under churn
 - Learning: Validation and evidence-first execution keeps each step auditable.

@@ -694,7 +694,7 @@
         "Query remains active for remaining subscribers",
         "Local subscriber state remains consistent"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 64,
