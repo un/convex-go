@@ -1,0 +1,64 @@
+{
+  "source_commit": "95ec2b33f568f99b053eaa101ddce6c94cb71f57",
+  "source_file": "sync_types/src/types/json.rs",
+  "source_repo": "/Users/omar/code/convex-rs",
+  "vectors": [
+    {
+      "kind": "client_decode",
+      "name": "old_admin_auth_message",
+      "payload": {
+        "baseVersion": 0,
+        "tokenType": "Admin",
+        "type": "Authenticate",
+        "value": "fakefakefake"
+      },
+      "rust_source": "sync_types/src/types/json.rs:1088"
+    },
+    {
+      "kind": "client_decode",
+      "name": "old_user_auth_message",
+      "payload": {
+        "baseVersion": 0,
+        "tokenType": "User",
+        "type": "Authenticate",
+        "value": "fakefakefake"
+      },
+      "rust_source": "sync_types/src/types/json.rs:1088"
+    },
+    {
+      "encoded": "AAAAAAAAAAA=",
+      "kind": "timestamp",
+      "name": "timestamp_0",
+      "rust_source": "sync_types/src/types/json.rs:u64_to_string",
+      "value": 0
+    },
+    {
+      "encoded": "AQAAAAAAAAA=",
+      "kind": "timestamp",
+      "name": "timestamp_1",
+      "rust_source": "sync_types/src/types/json.rs:u64_to_string",
+      "value": 1
+    },
+    {
+      "encoded": "KgAAAAAAAAA=",
+      "kind": "timestamp",
+      "name": "timestamp_42",
+      "rust_source": "sync_types/src/types/json.rs:u64_to_string",
+      "value": 42
+    },
+    {
+      "encoded": "BwAAAAAAIAA=",
+      "kind": "timestamp",
+      "name": "timestamp_9007199254740999",
+      "rust_source": "sync_types/src/types/json.rs:u64_to_string",
+      "value": 9007199254740999
+    },
+    {
+      "encoded": "//////////8=",
+      "kind": "timestamp",
+      "name": "timestamp_18446744073709551615",
+      "rust_source": "sync_types/src/types/json.rs:u64_to_string",
+      "value": 18446744073709551615
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 20 import-rust-fixture-vectors
+- Context: Protocol conformance needed baseline-linked fixtures instead of hand-authored local-only examples.
+- Learning: A deterministic import script tied to the Rust source file and commit hash makes fixture updates auditable and repeatable.
+- Impact on next steps: Conformance gate can now fail on drift between Go codec behavior and imported Rust vectors.
+
 ## 2026-02-26 Step 19 malformed-protocol-corpus-tests
 - Context: Strict codecs need regression-resistant malformed-input coverage beyond ad-hoc unit tests.
 - Learning: A shared malformed corpus file enables stable, scalable decode-failure assertions for both client and server protocol paths.
