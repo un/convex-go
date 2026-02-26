@@ -45,7 +45,7 @@
         "Backlog items include clear exit criteria",
         "Open remediations are visible in status reviews"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 5,
