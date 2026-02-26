@@ -230,8 +230,10 @@
     {
       "serial": 29,
       "name": "Implement LocalSyncState query registry",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 30,
