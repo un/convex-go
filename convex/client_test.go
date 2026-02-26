@@ -128,11 +128,9 @@ func newSyncTestServer(t *testing.T) *httptest.Server {
 							Identity: 0,
 							TS:       protocol.NewTimestamp(1),
 						},
-						Modifications: []protocol.StateModification{{
-							Type:    "QueryUpdated",
-							QueryID: query.QueryID,
-							Value:   payload,
-						}},
+						Modifications: []protocol.StateModification{
+							protocol.NewStateModificationQueryUpdated(query.QueryID, payload, nil),
+						},
 					}
 					bytes, err := protocol.EncodeServerMessage(transition)
 					if err != nil {

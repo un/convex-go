@@ -100,7 +100,7 @@
         "Error data handling is explicit",
         "Decoder rejects malformed variants"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 10,

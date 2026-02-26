@@ -183,12 +183,193 @@ func (mod *QuerySetModification) UnmarshalJSON(data []byte) error {
 }
 
 type StateModification struct {
-	Type         string          `json:"type"`
-	QueryID      QueryID         `json:"queryId"`
-	Value        json.RawMessage `json:"value,omitempty"`
-	ErrorMessage string          `json:"errorMessage,omitempty"`
-	ErrorData    json.RawMessage `json:"errorData,omitempty"`
-	Journal      *string         `json:"journal,omitempty"`
+	updated *StateQueryUpdated
+	failed  *StateQueryFailed
+	removed *QueryID
+}
+
+type StateQueryUpdated struct {
+	QueryID QueryID
+	Value   json.RawMessage
+	Journal *string
+}
+
+type StateQueryFailed struct {
+	QueryID      QueryID
+	ErrorMessage string
+	ErrorData    json.RawMessage
+	Journal      *string
+}
+
+func NewStateModificationQueryUpdated(queryID QueryID, value json.RawMessage, journal *string) StateModification {
+	copy := StateQueryUpdated{QueryID: queryID, Value: value, Journal: journal}
+	return StateModification{updated: &copy}
+}
+
+func NewStateModificationQueryFailed(queryID QueryID, message string, errorData json.RawMessage, journal *string) StateModification {
+	copy := StateQueryFailed{QueryID: queryID, ErrorMessage: message, ErrorData: errorData, Journal: journal}
+	return StateModification{failed: &copy}
+}
+
+func NewStateModificationQueryRemoved(queryID QueryID) StateModification {
+	copy := queryID
+	return StateModification{removed: &copy}
+}
+
+func (mod StateModification) Kind() string {
+	if mod.updated != nil {
+		return "QueryUpdated"
+	}
+	if mod.failed != nil {
+		return "QueryFailed"
+	}
+	if mod.removed != nil {
+		return "QueryRemoved"
+	}
+	return ""
+}
+
+func (mod StateModification) QueryUpdated() (StateQueryUpdated, bool) {
+	if mod.updated == nil {
+		return StateQueryUpdated{}, false
+	}
+	return *mod.updated, true
+}
+
+func (mod StateModification) QueryFailed() (StateQueryFailed, bool) {
+	if mod.failed == nil {
+		return StateQueryFailed{}, false
+	}
+	return *mod.failed, true
+}
+
+func (mod StateModification) QueryRemoved() (QueryID, bool) {
+	if mod.removed == nil {
+		return 0, false
+	}
+	return *mod.removed, true
+}
+
+func (mod StateModification) MarshalJSON() ([]byte, error) {
+	variants := 0
+	if mod.updated != nil {
+		variants++
+	}
+	if mod.failed != nil {
+		variants++
+	}
+	if mod.removed != nil {
+		variants++
+	}
+	if variants != 1 {
+		return nil, fmt.Errorf("state modification must contain exactly one variant")
+	}
+
+	if mod.updated != nil {
+		if len(mod.updated.Value) == 0 {
+			return nil, fmt.Errorf("query updated modification requires value")
+		}
+		return json.Marshal(struct {
+			Type    string          `json:"type"`
+			QueryID QueryID         `json:"queryId"`
+			Value   json.RawMessage `json:"value"`
+			Journal *string         `json:"journal,omitempty"`
+		}{
+			Type:    "QueryUpdated",
+			QueryID: mod.updated.QueryID,
+			Value:   mod.updated.Value,
+			Journal: mod.updated.Journal,
+		})
+	}
+
+	if mod.failed != nil {
+		if mod.failed.ErrorMessage == "" {
+			return nil, fmt.Errorf("query failed modification requires errorMessage")
+		}
+		return json.Marshal(struct {
+			Type         string          `json:"type"`
+			QueryID      QueryID         `json:"queryId"`
+			ErrorMessage string          `json:"errorMessage"`
+			ErrorData    json.RawMessage `json:"errorData,omitempty"`
+			Journal      *string         `json:"journal,omitempty"`
+		}{
+			Type:         "QueryFailed",
+			QueryID:      mod.failed.QueryID,
+			ErrorMessage: mod.failed.ErrorMessage,
+			ErrorData:    mod.failed.ErrorData,
+			Journal:      mod.failed.Journal,
+		})
+	}
+
+	return json.Marshal(struct {
+		Type    string  `json:"type"`
+		QueryID QueryID `json:"queryId"`
+	}{
+		Type:    "QueryRemoved",
+		QueryID: *mod.removed,
+	})
+}
+
+func (mod *StateModification) UnmarshalJSON(data []byte) error {
+	var base struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &base); err != nil {
+		return err
+	}
+
+	switch base.Type {
+	case "QueryUpdated":
+		var payload struct {
+			QueryID QueryID          `json:"queryId"`
+			Value   *json.RawMessage `json:"value"`
+			Journal *string          `json:"journal,omitempty"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.Value == nil {
+			return fmt.Errorf("query updated modification missing value")
+		}
+		mod.updated = &StateQueryUpdated{QueryID: payload.QueryID, Value: *payload.Value, Journal: payload.Journal}
+		mod.failed = nil
+		mod.removed = nil
+		return nil
+	case "QueryFailed":
+		var payload struct {
+			QueryID      QueryID         `json:"queryId"`
+			ErrorMessage *string         `json:"errorMessage"`
+			ErrorData    json.RawMessage `json:"errorData,omitempty"`
+			Journal      *string         `json:"journal,omitempty"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.ErrorMessage == nil {
+			return fmt.Errorf("query failed modification missing errorMessage")
+		}
+		mod.failed = &StateQueryFailed{QueryID: payload.QueryID, ErrorMessage: *payload.ErrorMessage, ErrorData: payload.ErrorData, Journal: payload.Journal}
+		mod.updated = nil
+		mod.removed = nil
+		return nil
+	case "QueryRemoved":
+		var payload struct {
+			QueryID *QueryID `json:"queryId"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.QueryID == nil {
+			return fmt.Errorf("query removed modification missing queryId")
+		}
+		copy := *payload.QueryID
+		mod.removed = &copy
+		mod.updated = nil
+		mod.failed = nil
+		return nil
+	default:
+		return fmt.Errorf("unknown state modification type %q", base.Type)
+	}
 }
 
 type AuthenticationToken struct {

@@ -423,13 +423,17 @@ func (c *Client) handleTransition(message protocol.ServerMessage) {
 	}
 
 	for _, modification := range message.Modifications {
-		switch modification.Type {
+		switch modification.Kind() {
 		case "QueryUpdated":
-			var value Value
-			if err := json.Unmarshal(modification.Value, &value); err != nil {
+			updated, ok := modification.QueryUpdated()
+			if !ok {
 				continue
 			}
-			queryID := modification.QueryID.Uint64()
+			var value Value
+			if err := json.Unmarshal(updated.Value, &value); err != nil {
+				continue
+			}
+			queryID := updated.QueryID.Uint64()
 			c.state.SetQueryValue(queryID, value)
 			for subID := range c.querySubscribers[queryID] {
 				if ch, ok := c.querySubs[subID]; ok {
@@ -437,14 +441,22 @@ func (c *Client) handleTransition(message protocol.ServerMessage) {
 				}
 			}
 		case "QueryFailed":
-			queryID := modification.QueryID.Uint64()
+			failed, ok := modification.QueryFailed()
+			if !ok {
+				continue
+			}
+			queryID := failed.QueryID.Uint64()
 			for subID := range c.querySubscribers[queryID] {
 				if ch, ok := c.querySubs[subID]; ok {
 					nonBlockingSendValue(ch, NewNullValue())
 				}
 			}
 		case "QueryRemoved":
-			c.state.SetQueryValue(modification.QueryID.Uint64(), NewNullValue())
+			queryID, ok := modification.QueryRemoved()
+			if !ok {
+				continue
+			}
+			c.state.SetQueryValue(queryID.Uint64(), NewNullValue())
 		}
 	}
 

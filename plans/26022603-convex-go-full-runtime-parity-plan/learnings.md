@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 9 typed-state-modifications
+- Context: Transition apply logic depended on weakly typed state-modification payloads, which accepted malformed field combinations.
+- Learning: Explicit QueryUpdated/QueryFailed/QueryRemoved variants make error handling and transition apply paths simpler and safer.
+- Impact on next steps: Remaining protocol unions (auth/client/server messages) should follow the same strict variant strategy.
+
 ## 2026-02-26 Step 8 typed-query-and-queryset-modifications
 - Context: Query-set updates used a single permissive struct, which allowed malformed Add/Remove payload combinations.
 - Learning: Modeling Add/Remove as explicit variants with custom JSON (de)serialization gives strict required-field enforcement while preserving wire compatibility.

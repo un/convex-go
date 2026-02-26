@@ -120,3 +120,52 @@ func TestQuerySetModificationRejectsMalformedAdd(t *testing.T) {
 		t.Fatalf("expected malformed add decode error")
 	}
 }
+
+func TestStateModificationVariantsRoundTrip(t *testing.T) {
+	updated := NewStateModificationQueryUpdated(NewQueryID(1), json.RawMessage(`{"ok":true}`), nil)
+	rawUpdated, err := json.Marshal(updated)
+	if err != nil {
+		t.Fatalf("marshal query updated failed: %v", err)
+	}
+	var decodedUpdated StateModification
+	if err := json.Unmarshal(rawUpdated, &decodedUpdated); err != nil {
+		t.Fatalf("unmarshal query updated failed: %v", err)
+	}
+	if _, ok := decodedUpdated.QueryUpdated(); !ok {
+		t.Fatalf("expected query updated variant")
+	}
+
+	failed := NewStateModificationQueryFailed(NewQueryID(2), "boom", json.RawMessage(`{"code":"X"}`), nil)
+	rawFailed, err := json.Marshal(failed)
+	if err != nil {
+		t.Fatalf("marshal query failed failed: %v", err)
+	}
+	var decodedFailed StateModification
+	if err := json.Unmarshal(rawFailed, &decodedFailed); err != nil {
+		t.Fatalf("unmarshal query failed failed: %v", err)
+	}
+	if data, ok := decodedFailed.QueryFailed(); !ok || data.ErrorMessage != "boom" {
+		t.Fatalf("expected query failed variant with error message")
+	}
+
+	removed := NewStateModificationQueryRemoved(NewQueryID(3))
+	rawRemoved, err := json.Marshal(removed)
+	if err != nil {
+		t.Fatalf("marshal query removed failed: %v", err)
+	}
+	var decodedRemoved StateModification
+	if err := json.Unmarshal(rawRemoved, &decodedRemoved); err != nil {
+		t.Fatalf("unmarshal query removed failed: %v", err)
+	}
+	if queryID, ok := decodedRemoved.QueryRemoved(); !ok || queryID != NewQueryID(3) {
+		t.Fatalf("expected query removed variant")
+	}
+}
+
+func TestStateModificationRejectsMalformedVariant(t *testing.T) {
+	raw := []byte(`{"type":"QueryFailed","queryId":1}`)
+	var output StateModification
+	if err := json.Unmarshal(raw, &output); err == nil {
+		t.Fatalf("expected malformed state modification decode error")
+	}
+}
