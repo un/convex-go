@@ -125,8 +125,10 @@
     {
       "serial": 16,
       "name": "Validate protocol fixtures against Go codecs",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 17,
