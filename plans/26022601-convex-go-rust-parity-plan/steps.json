@@ -507,7 +507,7 @@
         "Diff results are reviewed at each gate",
         "Unexpected drift triggers remediation"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 47,
