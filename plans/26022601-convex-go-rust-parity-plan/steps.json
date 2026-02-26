@@ -320,7 +320,7 @@
         "Result payload forms are represented",
         "Transition chunk path is captured"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 30,
