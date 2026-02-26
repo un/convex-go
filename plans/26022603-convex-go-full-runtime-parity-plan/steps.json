@@ -177,7 +177,7 @@
         "Malformed payloads fail with stable errors",
         "Compatibility cases are covered"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 17,

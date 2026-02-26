@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 16 strict-client-codec-decode
+- Context: Decode errors were not consistently classified, and legacy authenticate payloads needed compatibility handling.
+- Learning: Wrapping decode with an envelope check (`type` first) gives stable malformed-input errors, while targeted legacy fallback preserves backward compatibility.
+- Impact on next steps: Server encode/decode paths should adopt the same stable error-envelope approach.
+
 ## 2026-02-26 Step 15 strict-client-codec-encode
 - Context: Client encode still depended mostly on implicit struct marshaling behavior.
 - Learning: Adding an explicit encode validator in the codec path gives stable early failures and keeps wire-shape guarantees centralized.

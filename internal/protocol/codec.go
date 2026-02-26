@@ -57,9 +57,21 @@ func validateClientMessageForEncode(msg ClientMessage) error {
 }
 
 func DecodeClientMessage(data []byte) (ClientMessage, error) {
+	var envelope struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return ClientMessage{}, fmt.Errorf("invalid client message json: %w", err)
+	}
+	if envelope.Type == "" {
+		return ClientMessage{}, fmt.Errorf("client message missing type")
+	}
+
 	var msg ClientMessage
-	err := json.Unmarshal(data, &msg)
-	return msg, err
+	if err := json.Unmarshal(data, &msg); err != nil {
+		return ClientMessage{}, fmt.Errorf("invalid %s client message: %w", envelope.Type, err)
+	}
+	return msg, nil
 }
 
 func EncodeServerMessage(msg ServerMessage) ([]byte, error) {

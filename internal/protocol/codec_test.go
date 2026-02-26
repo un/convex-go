@@ -476,3 +476,24 @@ func TestClientEncodeWireKeys(t *testing.T) {
 		t.Fatalf("unexpected actingAs key for user token")
 	}
 }
+
+func TestDecodeClientMessageStrictEnvelopeErrors(t *testing.T) {
+	if _, err := DecodeClientMessage([]byte(`{"sessionId":"x"}`)); err == nil {
+		t.Fatalf("expected missing type decode error")
+	}
+	if _, err := DecodeClientMessage([]byte(`not-json`)); err == nil {
+		t.Fatalf("expected invalid json decode error")
+	}
+}
+
+func TestDecodeClientMessageAuthenticateLegacyCompatibility(t *testing.T) {
+	raw := []byte(`{"type":"Authenticate","baseVersion":1,"token":"legacy-token","admin":true,"actingAs":{"sub":"u1"}}`)
+	decoded, err := DecodeClientMessage(raw)
+	if err != nil {
+		t.Fatalf("legacy authenticate decode failed: %v", err)
+	}
+	admin, ok := decoded.Token.Admin()
+	if !ok || admin.Value != "legacy-token" {
+		t.Fatalf("expected decoded legacy admin token")
+	}
+}

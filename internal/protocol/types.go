@@ -729,7 +729,22 @@ func (msg *ClientMessage) UnmarshalJSON(data []byte) error {
 		}
 		var token AuthenticationToken
 		if err := json.Unmarshal(data, &token); err != nil {
-			return err
+			var legacy struct {
+				Token    *string         `json:"token,omitempty"`
+				Admin    bool            `json:"admin,omitempty"`
+				ActingAs json.RawMessage `json:"actingAs,omitempty"`
+			}
+			if legacyErr := json.Unmarshal(data, &legacy); legacyErr != nil {
+				return err
+			}
+			switch {
+			case legacy.Token == nil:
+				token = NewNoAuthenticationToken()
+			case legacy.Admin:
+				token = NewAdminAuthenticationToken(*legacy.Token, legacy.ActingAs)
+			default:
+				token = NewUserAuthenticationToken(*legacy.Token)
+			}
 		}
 		msg.BaseVersion = *payload.BaseVersion
 		msg.Token = token
