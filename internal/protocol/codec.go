@@ -131,9 +131,21 @@ func validateServerMessageForEncode(msg ServerMessage) error {
 }
 
 func DecodeServerMessage(data []byte) (ServerMessage, error) {
+	var envelope struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return ServerMessage{}, fmt.Errorf("invalid server message json: %w", err)
+	}
+	if envelope.Type == "" {
+		return ServerMessage{}, fmt.Errorf("server message missing type")
+	}
+
 	var msg ServerMessage
-	err := json.Unmarshal(data, &msg)
-	return msg, err
+	if err := json.Unmarshal(data, &msg); err != nil {
+		return ServerMessage{}, fmt.Errorf("invalid %s server message: %w", envelope.Type, err)
+	}
+	return msg, nil
 }
 
 func EncodeTimestamp(ts uint64) string {

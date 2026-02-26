@@ -964,6 +964,14 @@ func (msg *ServerMessage) UnmarshalJSON(data []byte) error {
 		if !*payload.Success && len(payload.Result) == 0 && payload.Error == "" {
 			return fmt.Errorf("%s error response missing result/error", strings.ToLower(base.Type))
 		}
+		if base.Type == "ActionResponse" && payload.TS != nil {
+			return fmt.Errorf("action response must not include ts")
+		}
+		if base.Type == "MutationResponse" && payload.TS != nil {
+			if _, err := DecodeTimestamp(*payload.TS); err != nil {
+				return fmt.Errorf("mutation response has invalid ts: %w", err)
+			}
+		}
 		msg.Type = base.Type
 		msg.RequestID = *payload.RequestID
 		msg.Success = payload.Success

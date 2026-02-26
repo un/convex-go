@@ -513,3 +513,30 @@ func TestServerEncodeValidationFailures(t *testing.T) {
 		}
 	}
 }
+
+func TestDecodeServerMessageEnvelopeErrors(t *testing.T) {
+	if _, err := DecodeServerMessage([]byte(`{"requestId":1}`)); err == nil {
+		t.Fatalf("expected missing type decode error")
+	}
+	if _, err := DecodeServerMessage([]byte(`nope`)); err == nil {
+		t.Fatalf("expected invalid json decode error")
+	}
+}
+
+func TestServerDecodeNullOptionalFields(t *testing.T) {
+	raw := []byte(`{"type":"AuthError","error":"expired","baseVersion":null,"authUpdateAttempted":null}`)
+	decoded, err := DecodeServerMessage(raw)
+	if err != nil {
+		t.Fatalf("auth error decode failed: %v", err)
+	}
+	if decoded.BaseVersion != nil || decoded.AuthUpdateAttempted != nil {
+		t.Fatalf("expected null optional fields to decode as nil")
+	}
+}
+
+func TestServerDecodeRejectsActionResponseTS(t *testing.T) {
+	raw := []byte(`{"type":"ActionResponse","requestId":1,"success":true,"result":{},"ts":"AAAAAAAAAAA="}`)
+	if _, err := DecodeServerMessage(raw); err == nil {
+		t.Fatalf("expected action response ts decode error")
+	}
+}

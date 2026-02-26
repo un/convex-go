@@ -199,7 +199,7 @@
         "Null vs missing fields handled correctly",
         "Malformed unions are rejected"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 19,

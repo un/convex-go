@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 18 strict-server-codec-decode
+- Context: Server decode lacked a stable envelope and did not validate some variant-specific optional-field edge cases.
+- Learning: Adding a typed envelope and variant-aware null/field checks yields deterministic malformed-union handling without breaking optional-null compatibility.
+- Impact on next steps: Malformed protocol corpus and fuzz gates can now assert stable decode failure classes.
+
 ## 2026-02-26 Step 17 strict-server-codec-encode
 - Context: Server encode path still relied on struct marshaling behavior without a dedicated codec-level validation gate.
 - Learning: An explicit server encode validator aligns encode-time failures with decode-time strictness and catches invalid response unions before wire emission.
