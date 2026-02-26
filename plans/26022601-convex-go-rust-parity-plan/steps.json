@@ -892,7 +892,7 @@
         "Path is forced to /api/sync",
         "Unsupported schemes fail with clear error"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 82,
