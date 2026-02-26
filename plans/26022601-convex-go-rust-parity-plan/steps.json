@@ -606,7 +606,7 @@
         "State modifications update local results correctly",
         "Observed timestamp updates correctly"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 56,
