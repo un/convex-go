@@ -1,3 +1,8 @@
+## 2026-02-26 Step 114 add-exception-handling-policy-for-unavoidable-drift
+- Context: Add exception handling policy for unavoidable drift
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 113 add-weekly-conformance-sweep
 - Context: Add weekly conformance sweep
 - Learning: Validation and evidence-first execution keeps each step auditable.

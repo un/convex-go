@@ -1255,7 +1255,7 @@
         "All drifts are explicitly tracked",
         "Retirement plan exists for each exception"
       ],
-      "completed": false
+      "completed": true
     }
   ],
   "ordering_policy": "The steps array order is the execution order and serial values are sequential IDs.",
