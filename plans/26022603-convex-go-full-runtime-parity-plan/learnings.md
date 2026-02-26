@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 30 websocket-state-callback-ordering
+- Context: State callback emission was ad-hoc and could duplicate/reorder transitions across connect/reconnect cycles.
+- Learning: Centralizing state emission with deduping (`emitState`) and callback-order tests locks in deterministic lifecycle ordering.
+- Impact on next steps: Transport integration tests can assert full lifecycle sequences reliably.
+
 ## 2026-02-26 Step 29 reconnect-backoff-jitter-parity
 - Context: Backoff jitter behavior diverged from Rust intent and used deterministic pseudo-jitter by default.
 - Learning: Rust-style full-jitter exponential backoff with cap + deterministic RNG tests gives predictable parity and safer reconnect spread.

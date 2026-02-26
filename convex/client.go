@@ -40,6 +40,8 @@ type Client struct {
 	wsURL         string
 	clientID      string
 	stateCallback StateCallback
+	lastState     WebSocketState
+	hasLastState  bool
 
 	manager         *syncproto.WebSocketManager
 	responses       <-chan syncproto.ProtocolResponse
@@ -220,6 +222,7 @@ func (c *Client) Close() {
 	if manager != nil {
 		_ = manager.Close()
 	}
+	c.emitState(WebSocketStateDisconnected)
 }
 
 func (c *Client) unsubscribe(subID int64) {
@@ -267,6 +270,7 @@ func (c *Client) ensureConnected(ctx context.Context) error {
 	if deploymentURL == "" {
 		return fmt.Errorf("deployment URL is required; use WithDeploymentURL")
 	}
+	c.emitState(WebSocketStateConnecting)
 	wsURL, err := syncproto.DeploymentURLToWebSocketURL(deploymentURL)
 	if err != nil {
 		return err
@@ -298,9 +302,7 @@ func (c *Client) ensureConnected(ctx context.Context) error {
 		go c.listenLoop()
 	}
 
-	if c.stateCallback != nil {
-		c.stateCallback(WebSocketStateConnected)
-	}
+	c.emitState(WebSocketStateConnected)
 	if c.authToken != nil {
 		_ = c.sendAuthenticate(ctx, c.authToken)
 	}
@@ -562,9 +564,7 @@ func (c *Client) onProtocolFailure(err error) {
 	observed := c.state.ObservedTimestamp()
 	c.mu.Unlock()
 
-	if c.stateCallback != nil {
-		c.stateCallback(WebSocketStateReconnecting)
-	}
+	c.emitState(WebSocketStateReconnecting)
 
 	go c.reconnectLoop(err.Error(), observed)
 }
@@ -603,9 +603,7 @@ func (c *Client) reconnectLoop(reason string, observed uint64) {
 		c.reconnecting = false
 		c.mu.Unlock()
 
-		if c.stateCallback != nil {
-			c.stateCallback(WebSocketStateConnected)
-		}
+		c.emitState(WebSocketStateConnected)
 
 		_ = c.replayState()
 		return
@@ -836,6 +834,23 @@ func copyMap(input map[string]any) map[string]any {
 		out[key] = value
 	}
 	return out
+}
+
+func (c *Client) emitState(state WebSocketState) {
+	c.mu.Lock()
+	if c.stateCallback == nil {
+		c.mu.Unlock()
+		return
+	}
+	if c.hasLastState && c.lastState == state {
+		c.mu.Unlock()
+		return
+	}
+	callback := c.stateCallback
+	c.lastState = state
+	c.hasLastState = true
+	c.mu.Unlock()
+	callback(state)
 }
 
 func nonBlockingSendValue(ch chan Value, value Value) {
