@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 3 freeze-scaffold-inventory
+- Context: Parity work spans many files; without a locked inventory, scaffold removal can be claimed without closure evidence.
+- Learning: Assigning stable inventory IDs and mandatory closure metadata makes scaffold-zero audit mechanically checkable.
+- Impact on next steps: Each runtime implementation step should close specific inventory rows with evidence references.
+
 ## 2026-02-26 Step 2 generate-gap-matrix
 - Context: Existing Go runtime behavior is spread across protocol, transport, base state, and API layers.
 - Learning: A function-level matrix prevents "hidden" runtime shortcuts by forcing each parity claim to cite a concrete Go location and Rust counterpart.

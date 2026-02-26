@@ -34,7 +34,7 @@
         "No known scaffold omitted",
         "Inventory has closure status fields"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 4,
