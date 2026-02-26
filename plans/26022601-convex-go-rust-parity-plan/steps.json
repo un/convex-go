@@ -826,7 +826,7 @@
         "Mixed source updates are correct",
         "Reconnect requests carry correct value"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 76,
