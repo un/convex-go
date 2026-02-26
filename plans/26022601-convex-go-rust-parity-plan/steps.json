@@ -848,7 +848,7 @@
         "Error message/class is expected",
         "Recovery path works"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 78,

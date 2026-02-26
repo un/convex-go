@@ -1,3 +1,8 @@
+## 2026-02-26 Step 77 validate-transitionchunk-rejection-behavior
+- Context: Validate TransitionChunk rejection behavior
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 76 validate-transition-start-version-mismatch-failure
 - Context: Validate transition start version mismatch failure
 - Learning: Validation and evidence-first execution keeps each step auditable.
