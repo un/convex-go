@@ -364,7 +364,7 @@
         "Fixtures are reproducible",
         "Baseline commit linkage is captured"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 34,
