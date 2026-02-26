@@ -760,7 +760,7 @@
         "State remains consistent after toggles",
         "Subsequent auth set works"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 70,
