@@ -155,7 +155,7 @@
         "Each id maps to test coverage",
         "Checklist can be audited automatically"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 15,
