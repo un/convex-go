@@ -584,7 +584,7 @@
         "Final unsubscribe emits remove message",
         "Subscriber tracking stays consistent"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 54,
