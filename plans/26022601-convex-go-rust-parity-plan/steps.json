@@ -1002,7 +1002,7 @@
         "Flush-before-select behavior is present",
         "Reconnect orchestration follows Rust semantics"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 92,
