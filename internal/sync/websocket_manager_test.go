@@ -7,6 +7,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/get-convex/convex-go/internal/protocol"
+	"github.com/gorilla/websocket"
 )
 
 func TestWebSocketOpenHandshakeFailureIncludesDetails(t *testing.T) {
@@ -42,5 +46,85 @@ func TestWebSocketOpenHonorsContextCancellation(t *testing.T) {
 	}
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+}
+
+func TestWebSocketConnectMessageOpenAndReconnect(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	connectMessages := make(chan protocol.ClientMessage, 4)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		go func() {
+			defer conn.Close()
+			_, payload, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			message, err := protocol.DecodeClientMessage(payload)
+			if err == nil {
+				connectMessages <- message
+			}
+			for {
+				if _, _, err := conn.ReadMessage(); err != nil {
+					return
+				}
+			}
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	defer manager.Close()
+
+	if _, err := manager.Open(context.Background(), ReconnectRequest{}); err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+	first := awaitConnectMessage(t, connectMessages)
+	if first.Type != "Connect" {
+		t.Fatalf("unexpected first message type: %s", first.Type)
+	}
+	if first.ConnectionCount != 0 {
+		t.Fatalf("expected first connectionCount=0, got %d", first.ConnectionCount)
+	}
+	if first.LastCloseReason != "InitialConnect" {
+		t.Fatalf("expected initial close reason, got %q", first.LastCloseReason)
+	}
+	if first.MaxObservedTimestamp != "" {
+		t.Fatalf("expected empty max observed timestamp, got %q", first.MaxObservedTimestamp)
+	}
+	if first.ClientTS == nil || *first.ClientTS != 0 {
+		t.Fatalf("expected clientTs=0, got %v", first.ClientTS)
+	}
+
+	reconnectRequest := ReconnectRequest{Reason: "InactiveServer", MaxObservedTimestamp: 42}
+	if err := manager.Reconnect(context.Background(), reconnectRequest); err != nil {
+		t.Fatalf("reconnect failed: %v", err)
+	}
+	second := awaitConnectMessage(t, connectMessages)
+	if second.ConnectionCount != 1 {
+		t.Fatalf("expected reconnect connectionCount=1, got %d", second.ConnectionCount)
+	}
+	if second.LastCloseReason != reconnectRequest.Reason {
+		t.Fatalf("expected reconnect reason %q, got %q", reconnectRequest.Reason, second.LastCloseReason)
+	}
+	expectedTS := protocol.EncodeTimestamp(reconnectRequest.MaxObservedTimestamp)
+	if second.MaxObservedTimestamp != expectedTS {
+		t.Fatalf("expected reconnect maxObservedTimestamp %q, got %q", expectedTS, second.MaxObservedTimestamp)
+	}
+}
+
+func awaitConnectMessage(t *testing.T, messages <-chan protocol.ClientMessage) protocol.ClientMessage {
+	t.Helper()
+	select {
+	case message := <-messages:
+		return message
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for connect message")
+		return protocol.ClientMessage{}
 	}
 }

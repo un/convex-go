@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 24 websocket-connect-message-path
+- Context: Connect payload correctness across open/reconnect cycles was implicit and unverified.
+- Learning: Transport-level tests that capture first-frame connect messages lock in session metadata, reason propagation, and observed-timestamp encoding semantics.
+- Impact on next steps: Writer/read-loop work can assume connect handshake metadata is stable per connection attempt.
+
 ## 2026-02-26 Step 23 websocket-dial-handshake
 - Context: Transport dial failures lacked actionable handshake context and weakly surfaced context cancellation.
 - Learning: Capturing HTTP handshake status/body and explicit cancellation wrapping makes connection setup failures diagnosable and deterministic.
