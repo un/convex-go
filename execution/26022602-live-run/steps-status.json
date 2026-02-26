@@ -93,8 +93,10 @@
     {
       "serial": 12,
       "name": "Implement strict ClientMessage codec",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 13,
