@@ -1,3 +1,8 @@
+## 2026-02-26 Step 25 implement-core-protocol-identifiers
+- Context: Implement core protocol identifiers
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 24 add-value-roundtrip-tests
 - Context: Add Value roundtrip tests
 - Learning: Validation and evidence-first execution keeps each step auditable.

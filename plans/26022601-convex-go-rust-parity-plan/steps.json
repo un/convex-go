@@ -276,7 +276,7 @@
         "Type conversions are tested",
         "Timestamp min/succ semantics are defined"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 26,
