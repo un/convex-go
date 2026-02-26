@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 6 strict-protocol-identifiers
+- Context: Runtime code used ad-hoc numeric casts (`uint64`<->`uint32`) at many protocol boundaries.
+- Learning: Centralized conversion helpers with overflow checks remove silent truncation risk and make identifier misuse testable.
+- Impact on next steps: All upcoming codec/model changes should rely on protocol conversion helpers instead of direct casts.
+
 ## 2026-02-26 Step 5 document-target-runtime-architecture
 - Context: Parity implementation touches transport, state, and API simultaneously, so ownership boundaries must be explicit before refactors.
 - Learning: Defining single-writer ownership (worker for state transitions, transport for websocket internals) prevents race-prone split responsibility.

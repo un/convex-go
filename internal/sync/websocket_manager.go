@@ -134,7 +134,7 @@ func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectReques
 	lastCloseReason := m.lastCloseReason
 	m.mu.Unlock()
 
-	sessionID := protocol.SessionID(uuid.NewString())
+	sessionID := protocol.MustSessionID(uuid.NewString())
 	maxObserved := ""
 	if request.MaxObservedTimestamp > 0 {
 		maxObserved = protocol.EncodeTimestamp(request.MaxObservedTimestamp)

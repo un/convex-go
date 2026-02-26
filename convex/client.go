@@ -243,8 +243,10 @@ func (c *Client) unsubscribe(subID int64) {
 	c.mu.Unlock()
 
 	if removed {
-		msg := c.buildModifyRemoveMessage(queryID)
-		_ = c.send(context.Background(), msg)
+		msg, buildErr := c.buildModifyRemoveMessage(queryID)
+		if buildErr == nil {
+			_ = c.send(context.Background(), msg)
+		}
 	}
 }
 
@@ -429,20 +431,22 @@ func (c *Client) handleTransition(message protocol.ServerMessage) {
 			if err := json.Unmarshal(modification.Value, &value); err != nil {
 				continue
 			}
-			c.state.SetQueryValue(uint64(modification.QueryID), value)
-			for subID := range c.querySubscribers[uint64(modification.QueryID)] {
+			queryID := modification.QueryID.Uint64()
+			c.state.SetQueryValue(queryID, value)
+			for subID := range c.querySubscribers[queryID] {
 				if ch, ok := c.querySubs[subID]; ok {
 					nonBlockingSendValue(ch, value)
 				}
 			}
 		case "QueryFailed":
-			for subID := range c.querySubscribers[uint64(modification.QueryID)] {
+			queryID := modification.QueryID.Uint64()
+			for subID := range c.querySubscribers[queryID] {
 				if ch, ok := c.querySubs[subID]; ok {
 					nonBlockingSendValue(ch, NewNullValue())
 				}
 			}
 		case "QueryRemoved":
-			c.state.SetQueryValue(uint64(modification.QueryID), NewNullValue())
+			c.state.SetQueryValue(modification.QueryID.Uint64(), NewNullValue())
 		}
 	}
 
@@ -616,10 +620,14 @@ func (c *Client) replayState() error {
 	}
 
 	if len(queries) > 0 {
+		newVersion, err := protocol.QuerySetVersionFromUint64(c.state.QuerySetVersion())
+		if err != nil {
+			return err
+		}
 		msg := protocol.ClientMessage{
 			Type:        "ModifyQuerySet",
 			BaseVersion: 0,
-			NewVersion:  uint32(c.state.QuerySetVersion()),
+			NewVersion:  newVersion.Uint32(),
 		}
 		msg.Modifications = make([]protocol.QuerySetModification, 0, len(queries))
 		for queryID, query := range queries {
@@ -627,9 +635,13 @@ func (c *Client) replayState() error {
 			if err != nil {
 				return err
 			}
+			wireQueryID, err := protocol.QueryIDFromUint64(queryID)
+			if err != nil {
+				return err
+			}
 			msg.Modifications = append(msg.Modifications, protocol.QuerySetModification{
 				Type:    "Add",
-				QueryID: protocol.QueryID(queryID),
+				QueryID: wireQueryID,
 				UDFPath: query.path,
 				Args:    args,
 			})
@@ -653,20 +665,27 @@ func (c *Client) buildModifyAddMessage(queryID uint64, path string, args map[str
 	if err != nil {
 		return protocol.ClientMessage{}, err
 	}
-	version := uint32(c.state.QuerySetVersion())
+	version, err := protocol.QuerySetVersionFromUint64(c.state.QuerySetVersion())
+	if err != nil {
+		return protocol.ClientMessage{}, err
+	}
+	wireQueryID, err := protocol.QueryIDFromUint64(queryID)
+	if err != nil {
+		return protocol.ClientMessage{}, err
+	}
 	baseVersion := uint32(0)
-	if version > 0 {
-		baseVersion = version - 1
+	if version.Uint32() > 0 {
+		baseVersion = version.Uint32() - 1
 	}
 
 	return protocol.ClientMessage{
 		Type:        "ModifyQuerySet",
 		BaseVersion: baseVersion,
-		NewVersion:  version,
+		NewVersion:  version.Uint32(),
 		Modifications: []protocol.QuerySetModification{
 			{
 				Type:    "Add",
-				QueryID: protocol.QueryID(queryID),
+				QueryID: wireQueryID,
 				UDFPath: path,
 				Args:    argsRaw,
 			},
@@ -674,32 +693,42 @@ func (c *Client) buildModifyAddMessage(queryID uint64, path string, args map[str
 	}, nil
 }
 
-func (c *Client) buildModifyRemoveMessage(queryID uint64) protocol.ClientMessage {
-	version := uint32(c.state.QuerySetVersion())
+func (c *Client) buildModifyRemoveMessage(queryID uint64) (protocol.ClientMessage, error) {
+	version, err := protocol.QuerySetVersionFromUint64(c.state.QuerySetVersion())
+	if err != nil {
+		return protocol.ClientMessage{}, err
+	}
+	wireQueryID, err := protocol.QueryIDFromUint64(queryID)
+	if err != nil {
+		return protocol.ClientMessage{}, err
+	}
 	baseVersion := uint32(0)
-	if version > 0 {
-		baseVersion = version - 1
+	if version.Uint32() > 0 {
+		baseVersion = version.Uint32() - 1
 	}
 	delete(c.queries, queryID)
 	return protocol.ClientMessage{
 		Type:        "ModifyQuerySet",
 		BaseVersion: baseVersion,
-		NewVersion:  version,
+		NewVersion:  version.Uint32(),
 		Modifications: []protocol.QuerySetModification{
 			{
 				Type:    "Remove",
-				QueryID: protocol.QueryID(queryID),
+				QueryID: wireQueryID,
 			},
 		},
-	}
+	}, nil
 }
 
 func (c *Client) sendAuthenticate(ctx context.Context, token *string) error {
 	c.mu.Lock()
-	version := uint32(c.state.IdentityVersion())
+	version, err := protocol.IdentityVersionFromUint64(c.state.IdentityVersion())
 	c.mu.Unlock()
+	if err != nil {
+		return err
+	}
 
-	message := protocol.ClientMessage{Type: "Authenticate", BaseVersion: version}
+	message := protocol.ClientMessage{Type: "Authenticate", BaseVersion: version.Uint32()}
 	if token == nil {
 		message.TokenType = "None"
 	} else {
