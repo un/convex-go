@@ -424,8 +424,10 @@
     {
       "serial": 53,
       "name": "Add live auth-refresh scenario tests",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 54,
