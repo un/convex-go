@@ -441,8 +441,10 @@
     {
       "serial": 55,
       "name": "Update examples to live protocol-backed client",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 56,
