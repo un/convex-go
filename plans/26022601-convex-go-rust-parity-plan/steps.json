@@ -133,7 +133,7 @@
         "Field naming and wire keys are captured",
         "Known edge cases are documented"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 13,
