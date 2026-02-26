@@ -1,3 +1,8 @@
+## 2026-02-26 Step 90 validation-gate-after-transport-implementation
+- Context: Validation gate after transport implementation
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 89 validate-websocket-send-failure-propagation
 - Context: Validate websocket send failure propagation
 - Learning: Validation and evidence-first execution keeps each step auditable.
