@@ -210,7 +210,7 @@
         "Decoder rejects malformed messages",
         "Error classification is asserted"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 20,

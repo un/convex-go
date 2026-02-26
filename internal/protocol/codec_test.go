@@ -2,6 +2,8 @@ package protocol
 
 import (
 	"encoding/json"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -538,5 +540,44 @@ func TestServerDecodeRejectsActionResponseTS(t *testing.T) {
 	raw := []byte(`{"type":"ActionResponse","requestId":1,"success":true,"result":{},"ts":"AAAAAAAAAAA="}`)
 	if _, err := DecodeServerMessage(raw); err == nil {
 		t.Fatalf("expected action response ts decode error")
+	}
+}
+
+func TestMalformedProtocolCorpus(t *testing.T) {
+	type malformedCase struct {
+		Name     string `json:"name"`
+		Kind     string `json:"kind"`
+		Payload  string `json:"payload"`
+		Contains string `json:"contains"`
+	}
+
+	raw, err := os.ReadFile("testdata/malformed_corpus.json")
+	if err != nil {
+		t.Fatalf("read malformed corpus failed: %v", err)
+	}
+	var cases []malformedCase
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatalf("decode malformed corpus failed: %v", err)
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			var decodeErr error
+			switch tc.Kind {
+			case "client":
+				_, decodeErr = DecodeClientMessage([]byte(tc.Payload))
+			case "server":
+				_, decodeErr = DecodeServerMessage([]byte(tc.Payload))
+			default:
+				t.Fatalf("unknown corpus kind %q", tc.Kind)
+			}
+			if decodeErr == nil {
+				t.Fatalf("expected malformed decode error")
+			}
+			if tc.Contains != "" && !strings.Contains(strings.ToLower(decodeErr.Error()), strings.ToLower(tc.Contains)) {
+				t.Fatalf("expected error to contain %q, got %q", tc.Contains, decodeErr.Error())
+			}
+		})
 	}
 }

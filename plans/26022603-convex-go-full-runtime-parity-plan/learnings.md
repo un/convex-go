@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 19 malformed-protocol-corpus-tests
+- Context: Strict codecs need regression-resistant malformed-input coverage beyond ad-hoc unit tests.
+- Learning: A shared malformed corpus file enables stable, scalable decode-failure assertions for both client and server protocol paths.
+- Impact on next steps: Fixture import and fuzzing can reuse this corpus as deterministic seeds.
+
 ## 2026-02-26 Step 18 strict-server-codec-decode
 - Context: Server decode lacked a stable envelope and did not validate some variant-specific optional-field edge cases.
 - Learning: Adding a typed envelope and variant-aware null/field checks yields deterministic malformed-union handling without breaking optional-null compatibility.
