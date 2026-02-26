@@ -870,7 +870,7 @@
         "Reconnect regression suite passes",
         "All discovered issues are remediated"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 80,
