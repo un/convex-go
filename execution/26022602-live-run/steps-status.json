@@ -238,8 +238,10 @@
     {
       "serial": 30,
       "name": "Implement transition ingest and version checks",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 31,
