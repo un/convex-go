@@ -368,8 +368,10 @@
     {
       "serial": 46,
       "name": "Implement watch_all consistent snapshots",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 47,
