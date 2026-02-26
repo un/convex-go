@@ -969,7 +969,7 @@
         "Failure count transitions are correct",
         "Subsequent delay starts from baseline"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 89,
