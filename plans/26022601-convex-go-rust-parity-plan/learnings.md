@@ -1,3 +1,8 @@
+## 2026-02-26 Step 13 define-validation-policy
+- Context: Define validation policy
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 12 build-protocol-parity-matrix
 - Context: Build protocol parity matrix
 - Learning: Validation and evidence-first execution keeps each step auditable.

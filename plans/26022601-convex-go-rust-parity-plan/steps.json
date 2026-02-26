@@ -144,7 +144,7 @@
         "Each subsystem has mandatory checks",
         "Completion criteria are objective"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 14,
