@@ -562,7 +562,7 @@
         "Distinct args map to distinct tokens",
         "Token determinism is tested"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 52,
