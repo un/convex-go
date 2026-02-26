@@ -21,8 +21,10 @@
     {
       "serial": 3,
       "name": "Add no-scaffold policy and CI check",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 4,
