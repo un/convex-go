@@ -336,8 +336,10 @@
     {
       "serial": 42,
       "name": "Replace in-memory ConvexClient scaffolding with worker wiring",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 43,
