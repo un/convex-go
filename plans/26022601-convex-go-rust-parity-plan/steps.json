@@ -947,7 +947,7 @@
         "Reconnect flow is triggered",
         "Test is deterministic"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 87,

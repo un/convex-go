@@ -1,3 +1,8 @@
+## 2026-02-26 Step 86 validate-websocket-inactivity-timeout-path
+- Context: Validate websocket inactivity timeout path
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 85 validate-websocket-state-callback-transitions
 - Context: Validate websocket state callback transitions
 - Learning: Validation and evidence-first execution keeps each step auditable.
