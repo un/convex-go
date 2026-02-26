@@ -210,7 +210,7 @@
         "Variant drift is detected",
         "Backward compatibility checks are explicit"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 20,
