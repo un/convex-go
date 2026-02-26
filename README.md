@@ -1,7 +1,24 @@
-# Convex Go (Parity Workstream)
+# Convex Go
 
-This repository tracks the Convex Go parity implementation process.
+Convex Go client with websocket sync transport.
 
-- Public API package: `convex/`
-- Internal domains: `internal/baseclient`, `internal/protocol`, `internal/sync`, `internal/testutil`
-- Validation tooling: `tools/validate_steps.py`, `validation/steps.manifest.json`
+## Quickstart
+
+Set deployment URL and run the example:
+
+```bash
+CONVEX_DEPLOYMENT_URL="https://<your-deployment>.convex.cloud" go run ./examples/quickstart
+```
+
+## Testing
+
+- Unit tests: `go test ./...`
+- Race detector: `go test -race ./...`
+- Live integration tests (opt-in):
+
+```bash
+CONVEX_INTEGRATION=1 \
+CONVEX_DEPLOYMENT_URL="https://<your-deployment>.convex.cloud" \
+CONVEX_TEST_QUERY="messages:list" \
+go test ./integration -v
+```

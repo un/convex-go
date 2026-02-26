@@ -1,0 +1,356 @@
+{
+  "plan": "26022602-convex-go-live-implementation-plan",
+  "updated": "2026-02-26",
+  "steps": [
+    {
+      "serial": 1,
+      "name": "Freeze Rust baseline for live implementation pass",
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
+    },
+    {
+      "serial": 2,
+      "name": "Create scaffold-gap inventory",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 3,
+      "name": "Add no-scaffold policy and CI check",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 4,
+      "name": "Upgrade deterministic test primitives",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 5,
+      "name": "Implement strict Value model",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 6,
+      "name": "Implement exact Value wire encoding",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 7,
+      "name": "Implement strict Value wire decoding",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 8,
+      "name": "Add Value conformance tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 9,
+      "name": "Model typed protocol identifiers and core structs",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 10,
+      "name": "Implement typed ClientMessage variants",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 11,
+      "name": "Implement typed ServerMessage variants",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 12,
+      "name": "Implement strict ClientMessage codec",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 13,
+      "name": "Implement strict ServerMessage codec",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 14,
+      "name": "Add malformed protocol corpus",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 15,
+      "name": "Import Rust-generated fixture vectors",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 16,
+      "name": "Validate protocol fixtures against Go codecs",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 17,
+      "name": "Add codec fuzzing",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 18,
+      "name": "Implement production websocket dialer",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 19,
+      "name": "Finalize deployment URL to sync endpoint conversion",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 20,
+      "name": "Implement websocket open handshake payload",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 21,
+      "name": "Implement websocket read loop",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 22,
+      "name": "Implement websocket send loop",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 23,
+      "name": "Implement heartbeat and inactivity timeout",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 24,
+      "name": "Implement backoff with jitter parity semantics",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 25,
+      "name": "Implement reconnect coordinator",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 26,
+      "name": "Implement websocket state callback transitions",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 27,
+      "name": "Add transport integration tests with local fake ws server",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 28,
+      "name": "Implement full RequestManager semantics",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 29,
+      "name": "Implement LocalSyncState query registry",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 30,
+      "name": "Implement transition ingest and version checks",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 31,
+      "name": "Implement non-transition server message handling",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 32,
+      "name": "Implement auth callback semantics in base state",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 33,
+      "name": "Implement replay queue rebuild on reconnect",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 34,
+      "name": "Implement QueryResults snapshot behavior",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 35,
+      "name": "Port base state machine behavior tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 36,
+      "name": "Implement worker command model",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 37,
+      "name": "Implement worker main loop",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 38,
+      "name": "Implement flush-before-select ordering",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 39,
+      "name": "Implement communicate-during-send behavior",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 40,
+      "name": "Implement protocol-failure reconnect propagation",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 41,
+      "name": "Port worker orchestration tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 42,
+      "name": "Replace in-memory ConvexClient scaffolding with worker wiring",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 43,
+      "name": "Implement real Subscribe path",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 44,
+      "name": "Implement real Query sugar path",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 45,
+      "name": "Implement real Mutation and Action APIs",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 46,
+      "name": "Implement watch_all consistent snapshots",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 47,
+      "name": "Implement clone/share and lifecycle teardown",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 48,
+      "name": "Implement auth APIs end-to-end",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 49,
+      "name": "Build deterministic fake sync manager for tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 50,
+      "name": "Port high-level behavior tests from Rust intent",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 51,
+      "name": "Replace placeholder integration test with real deployment suite",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 52,
+      "name": "Add live reconnect scenario tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 53,
+      "name": "Add live auth-refresh scenario tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 54,
+      "name": "Add churn and race reliability tests",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 55,
+      "name": "Update examples to live protocol-backed client",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 56,
+      "name": "Document runtime configuration and troubleshooting",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 57,
+      "name": "Run scaffold-zero audit",
+      "completed": false,
+      "validations": []
+    },
+    {
+      "serial": 58,
+      "name": "Final live parity gate",
+      "completed": false,
+      "validations": []
+    }
+  ]
+}
