@@ -1145,7 +1145,7 @@
         "Streams terminate predictably",
         "Leak checks pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 105,
