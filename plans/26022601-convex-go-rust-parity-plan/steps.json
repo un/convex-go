@@ -441,7 +441,7 @@
         "Encoding form is parity-correct",
         "Invalid float encodings are rejected"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 41,
