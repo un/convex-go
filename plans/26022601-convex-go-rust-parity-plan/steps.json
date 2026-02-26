@@ -23,7 +23,7 @@
         "Manifest format is documented",
         "CI can consume manifest entries"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 3,
