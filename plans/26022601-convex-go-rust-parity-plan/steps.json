@@ -936,7 +936,7 @@
         "State ordering is correct",
         "Reconnect cycles are covered"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 86,
