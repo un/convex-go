@@ -771,7 +771,7 @@
         "Completion occurs after appropriate transition",
         "Timestamp gating logic is proven"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 71,
