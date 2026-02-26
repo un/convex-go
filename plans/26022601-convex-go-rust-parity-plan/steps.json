@@ -452,7 +452,7 @@
         "Wire form matches Rust",
         "Large payload behavior is stable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 42,
