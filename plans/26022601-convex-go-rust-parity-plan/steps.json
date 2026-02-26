@@ -100,7 +100,7 @@
         "Remediation loop is proven",
         "Team can execute steps with confidence"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 10,
