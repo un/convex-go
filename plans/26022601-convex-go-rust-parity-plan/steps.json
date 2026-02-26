@@ -683,7 +683,7 @@
         "High-churn tests are stable",
         "Known Rust regression is guarded"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 63,
