@@ -305,3 +305,42 @@ func TestWebSocketHeartbeatSendsPingFrames(t *testing.T) {
 		t.Fatalf("timed out waiting for heartbeat ping frame")
 	}
 }
+
+func TestWebSocketInactivityWatchdogTriggersFailure(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		go func() {
+			defer conn.Close()
+			for {
+				if _, _, err := conn.ReadMessage(); err != nil {
+					return
+				}
+			}
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	manager.heartbeatInterval = 20 * time.Millisecond
+	manager.inactivityThreshold = 40 * time.Millisecond
+	defer manager.Close()
+
+	responses, err := manager.Open(context.Background(), ReconnectRequest{})
+	if err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+
+	select {
+	case response := <-responses:
+		if response.Err == nil || !strings.Contains(response.Err.Error(), "InactiveServer") {
+			t.Fatalf("expected inactivity failure, got %+v", response)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for inactivity failure")
+	}
+}

@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 28 inactivity-watchdog
+- Context: Heartbeats alone did not enforce reconnect when server-side silence persisted.
+- Learning: Tracking last server response timestamp and failing with a deterministic `InactiveServer` signal provides a clean reconnect trigger.
+- Impact on next steps: Reconnect/backoff ordering can now treat inactivity as a first-class transport failure reason.
+
 ## 2026-02-26 Step 27 heartbeat-ping-ticker
 - Context: Transport had no periodic liveness signal, leaving long-lived idle connections unmanaged.
 - Learning: A dedicated heartbeat loop with websocket ping control frames and deterministic failure surfacing closes that liveness gap cleanly.

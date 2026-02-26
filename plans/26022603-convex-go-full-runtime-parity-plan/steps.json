@@ -309,7 +309,7 @@
         "Reconnect request emitted",
         "Timeout tests are deterministic"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 29,
