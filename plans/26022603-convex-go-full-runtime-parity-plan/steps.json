@@ -364,7 +364,7 @@
         "Version increments are correct",
         "Observed timestamp tracking is correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 34,

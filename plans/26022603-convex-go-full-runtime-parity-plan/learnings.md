@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 33 localsyncstate-semantics
+- Context: Local sync semantics needed stronger guarantees around dedupe/versioning/subscriber lifecycle and observed timestamp monotonicity.
+- Learning: Exhaustive state-semantic tests are the fastest way to lock correctness before deeper transition/worker refactors.
+- Impact on next steps: Transition apply/chunk assembly can now build on verified local state invariants.
+
 ## 2026-02-26 Step 32 requestmanager-semantics
 - Context: Mutation replay/completion semantics were under-specified and allowed unresolved mutations to complete prematurely.
 - Learning: Explicit `WaitingOnTS` tracking is required so mutation completion only occurs after response visibility timestamps are established.
