@@ -837,7 +837,7 @@
         "Failure classification is correct",
         "Reconnect path is initiated"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 77,
