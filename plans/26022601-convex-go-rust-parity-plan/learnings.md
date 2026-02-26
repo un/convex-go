@@ -1,3 +1,8 @@
+## 2026-02-26 Step 98 implement-query-mutation-action-apis
+- Context: Implement query, mutation, action APIs
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 97 implement-subscriptions-and-watch-all
 - Context: Implement subscriptions and watch_all
 - Learning: Validation and evidence-first execution keeps each step auditable.
