@@ -432,8 +432,11 @@
     {
       "serial": 54,
       "name": "Add churn and race reliability tests",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./...",
+        "go test -race ./..."
+      ]
     },
     {
       "serial": 55,
