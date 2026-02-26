@@ -400,8 +400,10 @@
     {
       "serial": 50,
       "name": "Port high-level behavior tests from Rust intent",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 51,
