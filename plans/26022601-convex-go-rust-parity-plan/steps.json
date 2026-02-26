@@ -287,7 +287,7 @@
         "Acting-as fields serialize correctly",
         "Default/empty semantics are tested"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 27,
