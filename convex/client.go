@@ -731,10 +731,9 @@ func (c *Client) sendAuthenticate(ctx context.Context, token *string) error {
 
 	message := protocol.ClientMessage{Type: "Authenticate", BaseVersion: version.Uint32()}
 	if token == nil {
-		message.TokenType = "None"
+		message.Token = protocol.NewNoAuthenticationToken()
 	} else {
-		message.TokenType = "User"
-		message.Value = *token
+		message.Token = protocol.NewUserAuthenticationToken(*token)
 	}
 	return c.send(ctx, message)
 }

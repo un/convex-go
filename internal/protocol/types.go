@@ -536,9 +536,7 @@ type ClientMessage struct {
 	UDFPath              string                 `json:"udfPath,omitempty"`
 	Args                 json.RawMessage        `json:"args,omitempty"`
 	ComponentPath        *string                `json:"componentPath,omitempty"`
-	TokenType            string                 `json:"tokenType,omitempty"`
-	Value                string                 `json:"value,omitempty"`
-	ActingAs             json.RawMessage        `json:"actingAs,omitempty"`
+	Token                AuthenticationToken    `json:"-"`
 	EventType            string                 `json:"eventType,omitempty"`
 	Event                json.RawMessage        `json:"event,omitempty"`
 }
@@ -550,60 +548,106 @@ type clientMessageJSON struct {
 	LastCloseReason      *string                `json:"lastCloseReason,omitempty"`
 	MaxObservedTimestamp *string                `json:"maxObservedTimestamp,omitempty"`
 	ClientTS             *int64                 `json:"clientTs,omitempty"`
-	BaseVersion          uint32                 `json:"baseVersion,omitempty"`
-	NewVersion           uint32                 `json:"newVersion,omitempty"`
+	BaseVersion          *uint32                `json:"baseVersion,omitempty"`
+	NewVersion           *uint32                `json:"newVersion,omitempty"`
 	Modifications        []QuerySetModification `json:"modifications,omitempty"`
-	RequestID            RequestSequenceNumber  `json:"requestId,omitempty"`
+	RequestID            *RequestSequenceNumber `json:"requestId,omitempty"`
 	UDFPath              string                 `json:"udfPath,omitempty"`
 	Args                 json.RawMessage        `json:"args,omitempty"`
 	ComponentPath        *string                `json:"componentPath,omitempty"`
-	TokenType            string                 `json:"tokenType,omitempty"`
-	Value                string                 `json:"value,omitempty"`
-	ActingAs             json.RawMessage        `json:"actingAs,omitempty"`
 	EventType            string                 `json:"eventType,omitempty"`
 	Event                json.RawMessage        `json:"event,omitempty"`
 }
 
 func (msg ClientMessage) MarshalJSON() ([]byte, error) {
-	if msg.Type != "Connect" {
+	switch msg.Type {
+	case "Connect":
+		if msg.SessionID == "" {
+			return nil, fmt.Errorf("connect message missing sessionId")
+		}
+		if _, err := NewSessionID(msg.SessionID.String()); err != nil {
+			return nil, err
+		}
+		lastCloseReason := msg.LastCloseReason
+		if lastCloseReason == "" {
+			lastCloseReason = "unknown"
+		}
+		payload := clientMessageJSON{
+			Type:            "Connect",
+			SessionID:       msg.SessionID.String(),
+			ConnectionCount: &msg.ConnectionCount,
+			LastCloseReason: &lastCloseReason,
+			ClientTS:        msg.ClientTS,
+		}
+		if msg.MaxObservedTimestamp != "" {
+			payload.MaxObservedTimestamp = &msg.MaxObservedTimestamp
+		}
+		return json.Marshal(payload)
+	case "ModifyQuerySet":
+		baseVersion := msg.BaseVersion
+		newVersion := msg.NewVersion
+		if msg.Modifications == nil {
+			return nil, fmt.Errorf("modify query set message missing modifications")
+		}
+		return json.Marshal(clientMessageJSON{
+			Type:          "ModifyQuerySet",
+			BaseVersion:   &baseVersion,
+			NewVersion:    &newVersion,
+			Modifications: msg.Modifications,
+		})
+	case "Mutation", "Action":
+		if msg.UDFPath == "" {
+			return nil, fmt.Errorf("%s message missing udfPath", msg.Type)
+		}
+		if len(msg.Args) == 0 {
+			return nil, fmt.Errorf("%s message missing args", msg.Type)
+		}
+		requestID := msg.RequestID
 		return json.Marshal(clientMessageJSON{
 			Type:          msg.Type,
-			BaseVersion:   msg.BaseVersion,
-			NewVersion:    msg.NewVersion,
-			Modifications: msg.Modifications,
-			RequestID:     msg.RequestID,
+			RequestID:     &requestID,
 			UDFPath:       msg.UDFPath,
 			Args:          msg.Args,
 			ComponentPath: msg.ComponentPath,
-			TokenType:     msg.TokenType,
-			Value:         msg.Value,
-			ActingAs:      msg.ActingAs,
-			EventType:     msg.EventType,
-			Event:         msg.Event,
 		})
+	case "Authenticate":
+		if msg.Token.Kind() == "" {
+			return nil, fmt.Errorf("authenticate message missing token")
+		}
+		tokenBytes, err := json.Marshal(msg.Token)
+		if err != nil {
+			return nil, err
+		}
+		var payload map[string]json.RawMessage
+		if err := json.Unmarshal(tokenBytes, &payload); err != nil {
+			return nil, err
+		}
+		baseVersion, err := json.Marshal(msg.BaseVersion)
+		if err != nil {
+			return nil, err
+		}
+		typeValue, err := json.Marshal("Authenticate")
+		if err != nil {
+			return nil, err
+		}
+		payload["type"] = typeValue
+		payload["baseVersion"] = baseVersion
+		return json.Marshal(payload)
+	case "Event":
+		if msg.EventType == "" {
+			return nil, fmt.Errorf("event message missing eventType")
+		}
+		if len(msg.Event) == 0 {
+			return nil, fmt.Errorf("event message missing event payload")
+		}
+		return json.Marshal(clientMessageJSON{
+			Type:      "Event",
+			EventType: msg.EventType,
+			Event:     msg.Event,
+		})
+	default:
+		return nil, fmt.Errorf("unknown client message type %q", msg.Type)
 	}
-
-	if msg.SessionID == "" {
-		return nil, fmt.Errorf("connect message missing sessionId")
-	}
-	if _, err := NewSessionID(msg.SessionID.String()); err != nil {
-		return nil, err
-	}
-	lastCloseReason := msg.LastCloseReason
-	if lastCloseReason == "" {
-		lastCloseReason = "unknown"
-	}
-	payload := clientMessageJSON{
-		Type:            "Connect",
-		SessionID:       msg.SessionID.String(),
-		ConnectionCount: &msg.ConnectionCount,
-		LastCloseReason: &lastCloseReason,
-		ClientTS:        msg.ClientTS,
-	}
-	if msg.MaxObservedTimestamp != "" {
-		payload.MaxObservedTimestamp = &msg.MaxObservedTimestamp
-	}
-	return json.Marshal(payload)
 }
 
 func (msg *ClientMessage) UnmarshalJSON(data []byte) error {
@@ -620,50 +664,88 @@ func (msg *ClientMessage) UnmarshalJSON(data []byte) error {
 	}
 	msg.Type = payload.Type
 
-	if base.Type != "Connect" {
-		msg.BaseVersion = payload.BaseVersion
-		msg.NewVersion = payload.NewVersion
+	switch base.Type {
+	case "Connect":
+		if payload.SessionID == "" {
+			return fmt.Errorf("connect message missing sessionId")
+		}
+		sessionID, err := NewSessionID(payload.SessionID)
+		if err != nil {
+			return err
+		}
+		if payload.ConnectionCount == nil {
+			return fmt.Errorf("connect message missing connectionCount")
+		}
+		lastCloseReason := "unknown"
+		if payload.LastCloseReason != nil {
+			lastCloseReason = *payload.LastCloseReason
+		}
+		maxObservedTimestamp := ""
+		if payload.MaxObservedTimestamp != nil {
+			if _, err := DecodeTimestamp(*payload.MaxObservedTimestamp); err != nil {
+				return fmt.Errorf("connect message invalid maxObservedTimestamp: %w", err)
+			}
+			maxObservedTimestamp = *payload.MaxObservedTimestamp
+		}
+		msg.SessionID = sessionID
+		msg.ConnectionCount = *payload.ConnectionCount
+		msg.LastCloseReason = lastCloseReason
+		msg.MaxObservedTimestamp = maxObservedTimestamp
+		msg.ClientTS = payload.ClientTS
+		return nil
+	case "ModifyQuerySet":
+		if payload.BaseVersion == nil {
+			return fmt.Errorf("modify query set message missing baseVersion")
+		}
+		if payload.NewVersion == nil {
+			return fmt.Errorf("modify query set message missing newVersion")
+		}
+		if payload.Modifications == nil {
+			return fmt.Errorf("modify query set message missing modifications")
+		}
+		msg.BaseVersion = *payload.BaseVersion
+		msg.NewVersion = *payload.NewVersion
 		msg.Modifications = payload.Modifications
-		msg.RequestID = payload.RequestID
+		return nil
+	case "Mutation", "Action":
+		if payload.RequestID == nil {
+			return fmt.Errorf("%s message missing requestId", base.Type)
+		}
+		if payload.UDFPath == "" {
+			return fmt.Errorf("%s message missing udfPath", base.Type)
+		}
+		if len(payload.Args) == 0 {
+			return fmt.Errorf("%s message missing args", base.Type)
+		}
+		msg.RequestID = *payload.RequestID
 		msg.UDFPath = payload.UDFPath
 		msg.Args = payload.Args
 		msg.ComponentPath = payload.ComponentPath
-		msg.TokenType = payload.TokenType
-		msg.Value = payload.Value
-		msg.ActingAs = payload.ActingAs
+		return nil
+	case "Authenticate":
+		if payload.BaseVersion == nil {
+			return fmt.Errorf("authenticate message missing baseVersion")
+		}
+		var token AuthenticationToken
+		if err := json.Unmarshal(data, &token); err != nil {
+			return err
+		}
+		msg.BaseVersion = *payload.BaseVersion
+		msg.Token = token
+		return nil
+	case "Event":
+		if payload.EventType == "" {
+			return fmt.Errorf("event message missing eventType")
+		}
+		if len(payload.Event) == 0 {
+			return fmt.Errorf("event message missing event payload")
+		}
 		msg.EventType = payload.EventType
 		msg.Event = payload.Event
 		return nil
+	default:
+		return fmt.Errorf("unknown client message type %q", base.Type)
 	}
-
-	if payload.SessionID == "" {
-		return fmt.Errorf("connect message missing sessionId")
-	}
-	sessionID, err := NewSessionID(payload.SessionID)
-	if err != nil {
-		return err
-	}
-	if payload.ConnectionCount == nil {
-		return fmt.Errorf("connect message missing connectionCount")
-	}
-	lastCloseReason := "unknown"
-	if payload.LastCloseReason != nil {
-		lastCloseReason = *payload.LastCloseReason
-	}
-	maxObservedTimestamp := ""
-	if payload.MaxObservedTimestamp != nil {
-		if _, err := DecodeTimestamp(*payload.MaxObservedTimestamp); err != nil {
-			return fmt.Errorf("connect message invalid maxObservedTimestamp: %w", err)
-		}
-		maxObservedTimestamp = *payload.MaxObservedTimestamp
-	}
-
-	msg.SessionID = sessionID
-	msg.ConnectionCount = *payload.ConnectionCount
-	msg.LastCloseReason = lastCloseReason
-	msg.MaxObservedTimestamp = maxObservedTimestamp
-	msg.ClientTS = payload.ClientTS
-	return nil
 }
 
 type ServerMessage struct {

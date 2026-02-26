@@ -256,3 +256,76 @@ func TestConnectDecodeDefaultsAndTimestampValidation(t *testing.T) {
 		t.Fatalf("expected invalid maxObservedTimestamp decode error")
 	}
 }
+
+func TestClientMessageRemainingVariantsRoundTrip(t *testing.T) {
+	modify := ClientMessage{
+		Type:        "ModifyQuerySet",
+		BaseVersion: 1,
+		NewVersion:  2,
+		Modifications: []QuerySetModification{
+			NewQuerySetRemove(NewQueryID(9)),
+		},
+	}
+	encodedModify, err := EncodeClientMessage(modify)
+	if err != nil {
+		t.Fatalf("encode modify failed: %v", err)
+	}
+	if _, err := DecodeClientMessage(encodedModify); err != nil {
+		t.Fatalf("decode modify failed: %v", err)
+	}
+
+	mutation := ClientMessage{
+		Type:      "Mutation",
+		RequestID: NewRequestSequenceNumber(3),
+		UDFPath:   "messages:send",
+		Args:      json.RawMessage(`[{}]`),
+	}
+	encodedMutation, err := EncodeClientMessage(mutation)
+	if err != nil {
+		t.Fatalf("encode mutation failed: %v", err)
+	}
+	if _, err := DecodeClientMessage(encodedMutation); err != nil {
+		t.Fatalf("decode mutation failed: %v", err)
+	}
+
+	auth := ClientMessage{
+		Type:        "Authenticate",
+		BaseVersion: 4,
+		Token:       NewUserAuthenticationToken("jwt"),
+	}
+	encodedAuth, err := EncodeClientMessage(auth)
+	if err != nil {
+		t.Fatalf("encode authenticate failed: %v", err)
+	}
+	decodedAuth, err := DecodeClientMessage(encodedAuth)
+	if err != nil {
+		t.Fatalf("decode authenticate failed: %v", err)
+	}
+	if value, ok := decodedAuth.Token.User(); !ok || value != "jwt" {
+		t.Fatalf("expected decoded user token")
+	}
+
+	event := ClientMessage{Type: "Event", EventType: "presence", Event: json.RawMessage(`{"id":1}`)}
+	encodedEvent, err := EncodeClientMessage(event)
+	if err != nil {
+		t.Fatalf("encode event failed: %v", err)
+	}
+	if _, err := DecodeClientMessage(encodedEvent); err != nil {
+		t.Fatalf("decode event failed: %v", err)
+	}
+}
+
+func TestClientMessageVariantValidation(t *testing.T) {
+	tests := []ClientMessage{
+		{Type: "ModifyQuerySet", BaseVersion: 1, NewVersion: 2},
+		{Type: "Mutation", RequestID: NewRequestSequenceNumber(1), Args: json.RawMessage(`[{}]`)},
+		{Type: "Action", RequestID: NewRequestSequenceNumber(1), UDFPath: "x", Args: nil},
+		{Type: "Authenticate", BaseVersion: 1},
+		{Type: "Event", Event: json.RawMessage(`{}`)},
+	}
+	for _, message := range tests {
+		if _, err := EncodeClientMessage(message); err == nil {
+			t.Fatalf("expected encode validation failure for type %s", message.Type)
+		}
+	}
+}

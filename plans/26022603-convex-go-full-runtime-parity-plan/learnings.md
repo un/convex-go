@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 12 clientmessage-remaining-variants
+- Context: Non-connect client messages were still loosely marshaled, allowing invalid shapes through encode/decode paths.
+- Learning: Full variant-specific validation in `ClientMessage` custom JSON logic catches malformed requests at the protocol boundary.
+- Impact on next steps: Server-message variants should be tightened with the same explicit required-field checks.
+
 ## 2026-02-26 Step 11 clientmessage-connect-variant
 - Context: Connect payload decoding accepted missing required fields and inconsistent defaults.
 - Learning: Variant-specific custom JSON logic allows strict required-field checks while still applying protocol-compatible defaults (`lastCloseReason = unknown`).

@@ -133,7 +133,7 @@
         "Variant-required fields validated",
         "Roundtrip tests pass for all variants"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 13,
