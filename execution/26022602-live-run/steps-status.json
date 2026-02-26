@@ -69,8 +69,10 @@
     {
       "serial": 9,
       "name": "Model typed protocol identifiers and core structs",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 10,
