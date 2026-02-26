@@ -376,8 +376,10 @@
     {
       "serial": 47,
       "name": "Implement clone/share and lifecycle teardown",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 48,
