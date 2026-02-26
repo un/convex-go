@@ -34,7 +34,7 @@
         "Every failure can be traced to root cause and fix",
         "Regression test requirement is explicit"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 4,

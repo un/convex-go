@@ -1,3 +1,8 @@
+## 2026-02-26 Step 3 create-remediation-workflow-template
+- Context: Create remediation workflow template
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 2 add-per-step-validation-manifest
 - Context: Add per-step validation manifest
 - Learning: Validation and evidence-first execution keeps each step auditable.
