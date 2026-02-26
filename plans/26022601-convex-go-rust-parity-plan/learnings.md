@@ -1,3 +1,8 @@
+## 2026-02-26 Step 67 validate-auth-callback-immediate-fetch-behavior
+- Context: Validate auth callback immediate fetch behavior
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 66 validate-identity-version-monotonicity
 - Context: Validate identity version monotonicity
 - Learning: Validation and evidence-first execution keeps each step auditable.

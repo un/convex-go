@@ -738,7 +738,7 @@
         "Force-refresh flag is false initially",
         "Outgoing auth message is correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 68,
