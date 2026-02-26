@@ -1222,7 +1222,7 @@
         "All tests and CI gates are green",
         "Release candidate is ready"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 112,
