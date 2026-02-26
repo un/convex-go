@@ -22,6 +22,8 @@ type WebSocketManager struct {
 	writeQueue         chan []byte
 	writeStop          chan struct{}
 	writeQueueCapacity int
+	heartbeatStop      chan struct{}
+	heartbeatInterval  time.Duration
 	responses          chan ProtocolResponse
 	closed             bool
 	connectionCount    uint32
@@ -33,6 +35,7 @@ func NewWebSocketManager(wsURL, clientID string) *WebSocketManager {
 		wsURL:              wsURL,
 		clientID:           clientID,
 		writeQueueCapacity: 256,
+		heartbeatInterval:  5 * time.Second,
 		responses:          make(chan ProtocolResponse, 256),
 		lastCloseReason:    "InitialConnect",
 	}
@@ -92,15 +95,16 @@ func (m *WebSocketManager) Close() error {
 	m.closed = true
 	conn := m.conn
 	stop := m.writeStop
+	heartbeatStop := m.heartbeatStop
 	m.conn = nil
 	m.writeQueue = nil
 	m.writeStop = nil
+	m.heartbeatStop = nil
 	close(m.responses)
 	m.mu.Unlock()
 
-	if stop != nil {
-		safeClose(stop)
-	}
+	safeClose(stop)
+	safeClose(heartbeatStop)
 	if conn != nil {
 		return conn.Close()
 	}
@@ -132,11 +136,16 @@ func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectReques
 	if m.writeStop != nil {
 		safeClose(m.writeStop)
 	}
+	if m.heartbeatStop != nil {
+		safeClose(m.heartbeatStop)
+	}
 	m.conn = conn
 	m.writeQueue = make(chan []byte, m.writeQueueCapacity)
 	m.writeStop = make(chan struct{})
+	m.heartbeatStop = make(chan struct{})
 	writeQueue := m.writeQueue
 	writeStop := m.writeStop
+	heartbeatStop := m.heartbeatStop
 	connCount := m.connectionCount
 	m.connectionCount++
 	if request.Reason != "" {
@@ -169,6 +178,7 @@ func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectReques
 	}
 
 	go m.writeLoop(conn, writeQueue, writeStop)
+	go m.heartbeatLoop(conn, heartbeatStop)
 	go m.readLoop(conn)
 	return nil
 }
@@ -177,11 +187,14 @@ func (m *WebSocketManager) closeActiveConnection() {
 	m.mu.Lock()
 	conn := m.conn
 	stop := m.writeStop
+	heartbeatStop := m.heartbeatStop
 	m.conn = nil
 	m.writeQueue = nil
 	m.writeStop = nil
+	m.heartbeatStop = nil
 	m.mu.Unlock()
 	safeClose(stop)
+	safeClose(heartbeatStop)
 	if conn != nil {
 		_ = conn.Close()
 	}
@@ -222,6 +235,23 @@ func (m *WebSocketManager) writeLoop(conn *websocket.Conn, queue <-chan []byte, 
 	}
 }
 
+func (m *WebSocketManager) heartbeatLoop(conn *websocket.Conn, stop <-chan struct{}) {
+	ticker := time.NewTicker(m.heartbeatInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticker.C:
+			if err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(5*time.Second)); err != nil {
+				m.emitResponse(ProtocolResponse{Err: fmt.Errorf("heartbeat ping failed: %w", err)})
+				_ = conn.Close()
+				return
+			}
+		}
+	}
+}
+
 func (m *WebSocketManager) readLoop(conn *websocket.Conn) {
 	for {
 		messageType, payload, err := conn.ReadMessage()
@@ -233,6 +263,8 @@ func (m *WebSocketManager) readLoop(conn *websocket.Conn) {
 				m.writeQueue = nil
 				stop = m.writeStop
 				m.writeStop = nil
+				safeClose(m.heartbeatStop)
+				m.heartbeatStop = nil
 			}
 			m.mu.Unlock()
 			safeClose(stop)

@@ -262,3 +262,46 @@ func TestWebSocketReadLoopClassifiesCloseFrames(t *testing.T) {
 		t.Fatalf("timed out waiting for close frame classification")
 	}
 }
+
+func TestWebSocketHeartbeatSendsPingFrames(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	pingSeen := make(chan struct{}, 1)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		conn.SetPingHandler(func(appData string) error {
+			select {
+			case pingSeen <- struct{}{}:
+			default:
+			}
+			return nil
+		})
+		go func() {
+			defer conn.Close()
+			for {
+				if _, _, err := conn.ReadMessage(); err != nil {
+					return
+				}
+			}
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	manager.heartbeatInterval = 20 * time.Millisecond
+	defer manager.Close()
+
+	if _, err := manager.Open(context.Background(), ReconnectRequest{}); err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+
+	select {
+	case <-pingSeen:
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for heartbeat ping frame")
+	}
+}

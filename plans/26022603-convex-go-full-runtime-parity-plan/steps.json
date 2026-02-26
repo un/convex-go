@@ -298,7 +298,7 @@
         "Ping behavior is tested",
         "No timer leaks"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 28,

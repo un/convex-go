@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 27 heartbeat-ping-ticker
+- Context: Transport had no periodic liveness signal, leaving long-lived idle connections unmanaged.
+- Learning: A dedicated heartbeat loop with websocket ping control frames and deterministic failure surfacing closes that liveness gap cleanly.
+- Impact on next steps: Inactivity watchdog can now use heartbeat cadence as the timing backbone for reconnect triggers.
+
 ## 2026-02-26 Step 26 websocket-read-loop-classification
 - Context: Reader loop surfaced raw websocket/decode errors without consistent failure classes.
 - Learning: Explicit classification for close frames, read failures, frame-type mismatches, and protocol decode failures improves reconnect reason quality and testability.
