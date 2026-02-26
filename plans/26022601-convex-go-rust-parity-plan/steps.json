@@ -650,7 +650,7 @@
         "Reconnect regressions are covered",
         "Tests pass reliably under race detector"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 60,
