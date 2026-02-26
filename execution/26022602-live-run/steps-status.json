@@ -109,8 +109,10 @@
     {
       "serial": 14,
       "name": "Add malformed protocol corpus",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 15,
