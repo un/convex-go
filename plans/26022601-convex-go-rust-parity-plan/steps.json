@@ -1101,7 +1101,7 @@
         "Subscription streams terminate predictably",
         "Leak tests are clean"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 101,
