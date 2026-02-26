@@ -397,7 +397,7 @@
         "Decoder rejects invalid inputs",
         "Error classes are asserted"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 37,
