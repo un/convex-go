@@ -1,3 +1,8 @@
+## 2026-02-26 Step 34 validate-client-message-fixtures
+- Context: Validate client message fixtures
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 33 add-protocol-fixture-generator-from-rust
 - Context: Add protocol fixture generator from Rust
 - Learning: Validation and evidence-first execution keeps each step auditable.

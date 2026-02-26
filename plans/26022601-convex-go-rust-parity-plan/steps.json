@@ -375,7 +375,7 @@
         "Encode output matches expected wire form",
         "Decode behavior matches Rust"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 35,
