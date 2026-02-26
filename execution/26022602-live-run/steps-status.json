@@ -449,8 +449,10 @@
     {
       "serial": 56,
       "name": "Document runtime configuration and troubleshooting",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 57,
