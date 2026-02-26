@@ -903,7 +903,7 @@
         "Connect message emitted with required fields",
         "Header behavior is validated"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 83,
