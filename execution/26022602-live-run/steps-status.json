@@ -190,8 +190,10 @@
     {
       "serial": 24,
       "name": "Implement backoff with jitter parity semantics",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 25,
