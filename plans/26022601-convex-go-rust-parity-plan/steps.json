@@ -419,7 +419,7 @@
         "No panics or corrupt states",
         "Roundtrip invariants hold where applicable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 39,
