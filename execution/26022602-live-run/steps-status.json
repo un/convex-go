@@ -53,8 +53,10 @@
     {
       "serial": 7,
       "name": "Implement strict Value wire decoding",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 8,
