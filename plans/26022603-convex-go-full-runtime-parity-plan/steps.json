@@ -45,7 +45,7 @@
         "Forbidden markers are enforced",
         "False-positive rate is acceptable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 5,

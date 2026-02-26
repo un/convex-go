@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 4 add-no-scaffold-ci-guard
+- Context: Runtime parity work needs an automated guard to prevent regressions back to scaffold markers.
+- Learning: A marker-based guard with an explicit allowlist keeps CI strict while still allowing staged removal of known legacy paths.
+- Impact on next steps: As each scaffold inventory row closes, remove its allowlist entry so step 48 can run with zero exceptions.
+
 ## 2026-02-26 Step 3 freeze-scaffold-inventory
 - Context: Parity work spans many files; without a locked inventory, scaffold removal can be claimed without closure evidence.
 - Learning: Assigning stable inventory IDs and mandatory closure metadata makes scaffold-zero audit mechanically checkable.
