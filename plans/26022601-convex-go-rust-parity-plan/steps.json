@@ -859,7 +859,7 @@
         "Pending operations are unaffected",
         "High-frequency ping remains stable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 79,
