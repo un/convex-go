@@ -311,8 +311,10 @@
     {
       "serial": 39,
       "name": "Implement communicate-during-send behavior",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 40,
