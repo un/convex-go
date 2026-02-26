@@ -117,8 +117,10 @@
     {
       "serial": 15,
       "name": "Import Rust-generated fixture vectors",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 16,
