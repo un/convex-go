@@ -78,7 +78,7 @@
         "Policy is enforced in CI",
         "Merges are blocked on unmet validations"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 8,

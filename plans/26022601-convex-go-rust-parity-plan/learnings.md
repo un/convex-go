@@ -1,3 +1,8 @@
+## 2026-02-26 Step 7 add-pre-merge-validation-policy
+- Context: Add pre-merge validation policy
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 6 add-remediation-regression-test-requirement
 - Context: Add remediation regression test requirement
 - Learning: Validation and evidence-first execution keeps each step auditable.
