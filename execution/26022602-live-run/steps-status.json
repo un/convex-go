@@ -150,8 +150,10 @@
     {
       "serial": 19,
       "name": "Finalize deployment URL to sync endpoint conversion",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 20,
