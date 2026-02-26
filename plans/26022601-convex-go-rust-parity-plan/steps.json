@@ -529,7 +529,7 @@
         "Type mismatch and invalid id paths are handled",
         "Replay list ordering is deterministic"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 49,
