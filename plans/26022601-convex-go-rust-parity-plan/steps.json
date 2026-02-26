@@ -1134,7 +1134,7 @@
         "Cross-clone operations are consistent",
         "No duplicate transport instances are created"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 104,
