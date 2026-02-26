@@ -716,7 +716,7 @@
         "Base/new version relationships are valid",
         "Reconnect cases are covered"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 66,
