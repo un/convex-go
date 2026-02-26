@@ -628,7 +628,7 @@
         "Auth and query set are rebuilt correctly",
         "Regression test for duplicate base_version passes"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 58,
