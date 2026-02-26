@@ -1,3 +1,8 @@
+## 2026-02-26 Step 20 implement-value-type
+- Context: Implement Value type
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 19 add-public-type-shape-conformance-tests
 - Context: Add public type shape conformance tests
 - Learning: Validation and evidence-first execution keeps each step auditable.

@@ -221,7 +221,7 @@
         "Constructors/helpers are clear",
         "Type assertions are ergonomic"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 21,
