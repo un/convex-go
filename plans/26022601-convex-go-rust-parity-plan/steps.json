@@ -540,7 +540,7 @@
         "Error paths are covered",
         "Replay behavior is verified"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 50,
