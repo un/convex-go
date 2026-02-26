@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 17 strict-server-codec-encode
+- Context: Server encode path still relied on struct marshaling behavior without a dedicated codec-level validation gate.
+- Learning: An explicit server encode validator aligns encode-time failures with decode-time strictness and catches invalid response unions before wire emission.
+- Impact on next steps: Add a symmetric strict decode envelope for server messages to stabilize malformed error reporting.
+
 ## 2026-02-26 Step 16 strict-client-codec-decode
 - Context: Decode errors were not consistently classified, and legacy authenticate payloads needed compatibility handling.
 - Learning: Wrapping decode with an envelope check (`type` first) gives stable malformed-input errors, while targeted legacy fallback preserves backward compatibility.

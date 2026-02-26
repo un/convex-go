@@ -497,3 +497,19 @@ func TestDecodeClientMessageAuthenticateLegacyCompatibility(t *testing.T) {
 		t.Fatalf("expected decoded legacy admin token")
 	}
 }
+
+func TestServerEncodeValidationFailures(t *testing.T) {
+	success := false
+	tests := []ServerMessage{
+		{Type: "Transition"},
+		{Type: "TransitionChunk", Chunk: "x", PartNumber: 2, TotalParts: 2, TransitionID: "t"},
+		{Type: "MutationResponse", RequestID: NewRequestSequenceNumber(1), Success: &success},
+		{Type: "MutationResponse", RequestID: NewRequestSequenceNumber(1), Success: &success, Result: nil, Error: ""},
+		{Type: "FatalError"},
+	}
+	for _, message := range tests {
+		if _, err := EncodeServerMessage(message); err == nil {
+			t.Fatalf("expected encode validation error for server message type %s", message.Type)
+		}
+	}
+}

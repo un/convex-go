@@ -188,7 +188,7 @@
         "ErrorData behavior is correct",
         "Server fixture roundtrips pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 18,

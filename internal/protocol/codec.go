@@ -75,7 +75,59 @@ func DecodeClientMessage(data []byte) (ClientMessage, error) {
 }
 
 func EncodeServerMessage(msg ServerMessage) ([]byte, error) {
+	if err := validateServerMessageForEncode(msg); err != nil {
+		return nil, err
+	}
 	return json.Marshal(msg)
+}
+
+func validateServerMessageForEncode(msg ServerMessage) error {
+	switch msg.Type {
+	case "Transition":
+		if msg.StartVersion == nil {
+			return fmt.Errorf("transition message missing startVersion")
+		}
+		if msg.EndVersion == nil {
+			return fmt.Errorf("transition message missing endVersion")
+		}
+		if msg.Modifications == nil {
+			return fmt.Errorf("transition message missing modifications")
+		}
+	case "TransitionChunk":
+		if msg.Chunk == "" {
+			return fmt.Errorf("transition chunk message missing chunk")
+		}
+		if msg.TransitionID == "" {
+			return fmt.Errorf("transition chunk message missing transitionId")
+		}
+		if msg.TotalParts == 0 {
+			return fmt.Errorf("transition chunk message missing totalParts")
+		}
+		if msg.PartNumber >= msg.TotalParts {
+			return fmt.Errorf("transition chunk partNumber %d out of range for totalParts %d", msg.PartNumber, msg.TotalParts)
+		}
+	case "MutationResponse", "ActionResponse":
+		if msg.Success == nil {
+			return fmt.Errorf("%s missing success", msg.Type)
+		}
+		if !*msg.Success && len(msg.Result) == 0 && msg.Error == "" {
+			return fmt.Errorf("%s error response missing result/error", msg.Type)
+		}
+		if msg.Type == "MutationResponse" && msg.TS != "" {
+			if _, err := DecodeTimestamp(msg.TS); err != nil {
+				return fmt.Errorf("mutation response invalid ts: %w", err)
+			}
+		}
+	case "AuthError", "FatalError":
+		if msg.Error == "" {
+			return fmt.Errorf("%s message missing error", msg.Type)
+		}
+	case "Ping":
+		return nil
+	default:
+		return fmt.Errorf("unknown server message type %q", msg.Type)
+	}
+	return nil
 }
 
 func DecodeServerMessage(data []byte) (ServerMessage, error) {
