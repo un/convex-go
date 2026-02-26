@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 23 websocket-dial-handshake
+- Context: Transport dial failures lacked actionable handshake context and weakly surfaced context cancellation.
+- Learning: Capturing HTTP handshake status/body and explicit cancellation wrapping makes connection setup failures diagnosable and deterministic.
+- Impact on next steps: Connect/send/read loops can now rely on richer failure classification for reconnect logic.
+
 ## 2026-02-26 Step 22 codec-fuzzing-gate
 - Context: Strict unit/corpus checks reduce regressions, but fuzzing is needed to guard against panic-class edge cases.
 - Learning: Seeding fuzz targets from malformed corpus + Rust fixtures gives high-signal coverage without sacrificing determinism in normal test runs.

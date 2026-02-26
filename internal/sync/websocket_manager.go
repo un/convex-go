@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -108,15 +109,19 @@ func (m *WebSocketManager) Close() error {
 }
 
 func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectRequest) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("websocket dial cancelled: %w", err)
+	}
+
 	headers := http.Header{}
 	if m.clientID != "" {
 		headers.Set("Convex-Client", m.clientID)
 	}
 
 	d := websocket.Dialer{HandshakeTimeout: 20 * time.Second}
-	conn, _, err := d.DialContext(ctx, m.wsURL, headers)
+	conn, response, err := d.DialContext(ctx, m.wsURL, headers)
 	if err != nil {
-		return err
+		return formatDialError(ctx, m.wsURL, response, err)
 	}
 
 	m.mu.Lock()
@@ -159,6 +164,21 @@ func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectReques
 
 	go m.readLoop(conn)
 	return nil
+}
+
+func formatDialError(ctx context.Context, wsURL string, response *http.Response, err error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return fmt.Errorf("websocket dial cancelled: %w", ctxErr)
+	}
+	if response == nil {
+		return fmt.Errorf("websocket dial to %s failed: %w", wsURL, err)
+	}
+	defer response.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
+	if len(body) == 0 {
+		return fmt.Errorf("websocket handshake to %s failed with %s: %w", wsURL, response.Status, err)
+	}
+	return fmt.Errorf("websocket handshake to %s failed with %s: %w: %s", wsURL, response.Status, err, string(body))
 }
 
 func (m *WebSocketManager) readLoop(conn *websocket.Conn) {

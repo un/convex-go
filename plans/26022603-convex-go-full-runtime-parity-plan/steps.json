@@ -254,7 +254,7 @@
         "Handshake errors include useful details",
         "Connection setup is testable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 24,
