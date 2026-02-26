@@ -639,7 +639,7 @@
         "Iteration exposes subscribers with optional values",
         "Snapshot clone behavior is reliable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 59,
