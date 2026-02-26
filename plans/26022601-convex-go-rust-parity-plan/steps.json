@@ -199,7 +199,7 @@
         "CI fails on signature drift",
         "Conformance tests are documented"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 19,
