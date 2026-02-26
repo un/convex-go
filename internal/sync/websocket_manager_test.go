@@ -344,3 +344,77 @@ func TestWebSocketInactivityWatchdogTriggersFailure(t *testing.T) {
 		t.Fatalf("timed out waiting for inactivity failure")
 	}
 }
+
+func TestWebSocketManagerIntegrationLifecycle(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	connects := make(chan protocol.ClientMessage, 4)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		go func() {
+			defer conn.Close()
+			for {
+				_, payload, err := conn.ReadMessage()
+				if err != nil {
+					return
+				}
+				message, err := protocol.DecodeClientMessage(payload)
+				if err != nil {
+					continue
+				}
+				if message.Type == "Connect" {
+					connects <- message
+					continue
+				}
+				if message.Type == "Event" {
+					ping := protocol.ServerMessage{Type: "Ping"}
+					bytes, err := protocol.EncodeServerMessage(ping)
+					if err != nil {
+						return
+					}
+					_ = conn.WriteMessage(websocket.TextMessage, bytes)
+				}
+			}
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	defer manager.Close()
+
+	responses, err := manager.Open(context.Background(), ReconnectRequest{})
+	if err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+	firstConnect := awaitConnectMessage(t, connects)
+	if firstConnect.ConnectionCount != 0 {
+		t.Fatalf("expected first connect count=0, got %d", firstConnect.ConnectionCount)
+	}
+
+	if err := manager.Send(context.Background(), protocol.ClientMessage{Type: "Event", EventType: "lifecycle", Event: []byte(`{"ok":true}`)}); err != nil {
+		t.Fatalf("send failed: %v", err)
+	}
+	select {
+	case response := <-responses:
+		if response.Err != nil {
+			t.Fatalf("unexpected protocol error: %v", response.Err)
+		}
+		if response.Message == nil || response.Message.Type != "Ping" {
+			t.Fatalf("expected ping message response, got %+v", response.Message)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for ping response")
+	}
+
+	if err := manager.Reconnect(context.Background(), ReconnectRequest{Reason: "test-reconnect"}); err != nil {
+		t.Fatalf("reconnect failed: %v", err)
+	}
+	secondConnect := awaitConnectMessage(t, connects)
+	if secondConnect.ConnectionCount != 1 {
+		t.Fatalf("expected reconnect count=1, got %d", secondConnect.ConnectionCount)
+	}
+}

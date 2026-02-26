@@ -104,7 +104,6 @@ func (m *WebSocketManager) Close() error {
 	m.writeStop = nil
 	m.heartbeatStop = nil
 	m.lastServerResponse = time.Time{}
-	close(m.responses)
 	m.mu.Unlock()
 
 	safeClose(stop)

@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 31 transport-integration-tests
+- Context: Individual transport unit tests existed, but lifecycle behavior (open/send/read/reconnect) needed integrated validation under race detector.
+- Learning: A controllable websocket integration test plus race-gate execution exposed and fixed a real channel-close/send race in transport shutdown.
+- Impact on next steps: Runtime orchestration work can build on a race-clean transport baseline.
+
 ## 2026-02-26 Step 30 websocket-state-callback-ordering
 - Context: State callback emission was ad-hoc and could duplicate/reorder transitions across connect/reconnect cycles.
 - Learning: Centralizing state emission with deduping (`emitState`) and callback-order tests locks in deterministic lifecycle ordering.

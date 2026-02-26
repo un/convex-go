@@ -342,7 +342,7 @@
         "Failure paths are tested",
         "Tests are stable under race detector"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 32,
