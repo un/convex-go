@@ -101,8 +101,10 @@
     {
       "serial": 13,
       "name": "Implement strict ServerMessage codec",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 14,
