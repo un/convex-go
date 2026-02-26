@@ -89,7 +89,7 @@
         "Remediation workflow triggers automatically",
         "Process gaps are fixed"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 9,
