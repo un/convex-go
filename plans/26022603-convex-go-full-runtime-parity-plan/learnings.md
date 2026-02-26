@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 29 reconnect-backoff-jitter-parity
+- Context: Backoff jitter behavior diverged from Rust intent and used deterministic pseudo-jitter by default.
+- Learning: Rust-style full-jitter exponential backoff with cap + deterministic RNG tests gives predictable parity and safer reconnect spread.
+- Impact on next steps: Transport state callbacks can now rely on stable backoff semantics during reconnect cycles.
+
 ## 2026-02-26 Step 28 inactivity-watchdog
 - Context: Heartbeats alone did not enforce reconnect when server-side silence persisted.
 - Learning: Tracking last server response timestamp and failing with a deterministic `InactiveServer` signal provides a clean reconnect trigger.

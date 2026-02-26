@@ -320,7 +320,7 @@
         "Cap/reset semantics are correct",
         "Deterministic RNG tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 30,
