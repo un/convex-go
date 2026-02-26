@@ -206,8 +206,10 @@
     {
       "serial": 26,
       "name": "Implement websocket state callback transitions",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 27,
