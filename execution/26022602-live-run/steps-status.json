@@ -61,8 +61,10 @@
     {
       "serial": 8,
       "name": "Add Value conformance tests",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 9,
