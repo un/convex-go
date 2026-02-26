@@ -295,8 +295,10 @@
     {
       "serial": 37,
       "name": "Implement worker main loop",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 38,
