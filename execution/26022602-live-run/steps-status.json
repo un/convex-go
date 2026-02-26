@@ -384,8 +384,10 @@
     {
       "serial": 48,
       "name": "Implement auth APIs end-to-end",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 49,
