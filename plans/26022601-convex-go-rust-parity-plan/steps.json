@@ -56,7 +56,7 @@
         "Each failed step gets triage classification",
         "Follow-up actions are unambiguous"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 6,

@@ -1,3 +1,8 @@
+## 2026-02-26 Step 5 add-step-level-failure-triage-checklist
+- Context: Add step-level failure triage checklist
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 4 add-auto-generated-remediation-backlog
 - Context: Add auto-generated remediation backlog
 - Learning: Validation and evidence-first execution keeps each step auditable.
