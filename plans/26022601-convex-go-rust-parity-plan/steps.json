@@ -353,7 +353,7 @@
         "Fixture diffs are easy to review",
         "Codec regressions fail loudly"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 33,
