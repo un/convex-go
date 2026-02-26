@@ -1,3 +1,8 @@
+## 2026-02-26 Step 93 validate-protocol-failure-triggers-reconnect-request
+- Context: Validate protocol failure triggers reconnect request
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 92 validate-worker-flush-before-select-ordering
 - Context: Validate worker flush-before-select ordering
 - Learning: Validation and evidence-first execution keeps each step auditable.

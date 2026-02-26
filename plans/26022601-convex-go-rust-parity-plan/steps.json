@@ -1024,7 +1024,7 @@
         "Reason field is populated correctly",
         "Timestamp field matches base state"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 94,
