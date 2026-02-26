@@ -1211,7 +1211,7 @@
         "Public API docs are complete",
         "Docs include realtime and auth patterns"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 111,
