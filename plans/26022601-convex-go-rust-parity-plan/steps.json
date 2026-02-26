@@ -727,7 +727,7 @@
         "Auth clear behavior is correct",
         "Reconnect refresh semantics are validated"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 67,
