@@ -617,7 +617,7 @@
         "Auth/fatal errors surface reconnect reasons",
         "Transition chunk path returns expected error"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 57,
