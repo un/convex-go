@@ -408,8 +408,10 @@
     {
       "serial": 51,
       "name": "Replace placeholder integration test with real deployment suite",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 52,
