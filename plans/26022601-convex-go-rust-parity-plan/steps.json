@@ -1068,7 +1068,7 @@
         "Dropping/closing unsubscribes correctly",
         "watch_all returns consistent snapshots"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 98,
