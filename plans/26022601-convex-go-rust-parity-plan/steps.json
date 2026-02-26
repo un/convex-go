@@ -463,7 +463,7 @@
         "No precision loss occurs",
         "Wire tags are emitted correctly"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 43,
