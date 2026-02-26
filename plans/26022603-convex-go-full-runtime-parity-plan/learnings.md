@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 22 codec-fuzzing-gate
+- Context: Strict unit/corpus checks reduce regressions, but fuzzing is needed to guard against panic-class edge cases.
+- Learning: Seeding fuzz targets from malformed corpus + Rust fixtures gives high-signal coverage without sacrificing determinism in normal test runs.
+- Impact on next steps: Transport/runtime refactors should keep protocol entry points panic-free under arbitrary inputs.
+
 ## 2026-02-26 Step 21 fixture-conformance-gate
 - Context: Imported fixtures are useful only if they actively gate protocol behavior in normal CI runs.
 - Learning: Embedding Rust fixture conformance checks in `go test` keeps drift detection continuous and avoids a separate, easy-to-skip gate.
