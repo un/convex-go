@@ -89,7 +89,7 @@
         "Optional fields are handled correctly",
         "Roundtrip tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 9,

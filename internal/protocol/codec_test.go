@@ -70,3 +70,53 @@ func TestStateVersionRejectsInvalidTimestamp(t *testing.T) {
 		t.Fatalf("expected invalid timestamp error")
 	}
 }
+
+func TestQuerySetModificationAddRoundTrip(t *testing.T) {
+	input := NewQuerySetAdd(Query{
+		QueryID: NewQueryID(9),
+		UDFPath: "messages:list",
+		Args:    json.RawMessage(`[{"limit":10}]`),
+	})
+
+	raw, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var output QuerySetModification
+	if err := json.Unmarshal(raw, &output); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	query, ok := output.Query()
+	if !ok {
+		t.Fatalf("expected add variant after roundtrip")
+	}
+	if query.QueryID != NewQueryID(9) || query.UDFPath != "messages:list" {
+		t.Fatalf("unexpected query payload: %+v", query)
+	}
+}
+
+func TestQuerySetModificationRemoveRoundTrip(t *testing.T) {
+	input := NewQuerySetRemove(NewQueryID(3))
+	raw, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var output QuerySetModification
+	if err := json.Unmarshal(raw, &output); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if !output.IsRemove() {
+		t.Fatalf("expected remove variant after roundtrip")
+	}
+	if output.QueryID() != NewQueryID(3) {
+		t.Fatalf("unexpected remove query id: %d", output.QueryID())
+	}
+}
+
+func TestQuerySetModificationRejectsMalformedAdd(t *testing.T) {
+	raw := []byte(`{"type":"Add","queryId":1}`)
+	var output QuerySetModification
+	if err := json.Unmarshal(raw, &output); err == nil {
+		t.Fatalf("expected malformed add decode error")
+	}
+}

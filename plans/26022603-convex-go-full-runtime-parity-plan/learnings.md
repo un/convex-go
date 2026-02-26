@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 8 typed-query-and-queryset-modifications
+- Context: Query-set updates used a single permissive struct, which allowed malformed Add/Remove payload combinations.
+- Learning: Modeling Add/Remove as explicit variants with custom JSON (de)serialization gives strict required-field enforcement while preserving wire compatibility.
+- Impact on next steps: Apply the same variant-modeling pattern to state modifications and auth/message unions.
+
 ## 2026-02-26 Step 7 state-version-and-timestamp-encoding
 - Context: `StateVersion.ts` was treated as an unvalidated string, so malformed wire timestamps could leak into runtime state.
 - Learning: Moving timestamp validation into `StateVersion.UnmarshalJSON` centralizes correctness and removes per-call decode branching.

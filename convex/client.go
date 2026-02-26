@@ -637,12 +637,11 @@ func (c *Client) replayState() error {
 			if err != nil {
 				return err
 			}
-			msg.Modifications = append(msg.Modifications, protocol.QuerySetModification{
-				Type:    "Add",
+			msg.Modifications = append(msg.Modifications, protocol.NewQuerySetAdd(protocol.Query{
 				QueryID: wireQueryID,
 				UDFPath: query.path,
 				Args:    args,
-			})
+			}))
 		}
 		if err := c.send(context.Background(), msg); err != nil {
 			return err
@@ -680,14 +679,11 @@ func (c *Client) buildModifyAddMessage(queryID uint64, path string, args map[str
 		Type:        "ModifyQuerySet",
 		BaseVersion: baseVersion,
 		NewVersion:  version.Uint32(),
-		Modifications: []protocol.QuerySetModification{
-			{
-				Type:    "Add",
-				QueryID: wireQueryID,
-				UDFPath: path,
-				Args:    argsRaw,
-			},
-		},
+		Modifications: []protocol.QuerySetModification{protocol.NewQuerySetAdd(protocol.Query{
+			QueryID: wireQueryID,
+			UDFPath: path,
+			Args:    argsRaw,
+		})},
 	}, nil
 }
 
@@ -706,15 +702,10 @@ func (c *Client) buildModifyRemoveMessage(queryID uint64) (protocol.ClientMessag
 	}
 	delete(c.queries, queryID)
 	return protocol.ClientMessage{
-		Type:        "ModifyQuerySet",
-		BaseVersion: baseVersion,
-		NewVersion:  version.Uint32(),
-		Modifications: []protocol.QuerySetModification{
-			{
-				Type:    "Remove",
-				QueryID: wireQueryID,
-			},
-		},
+		Type:          "ModifyQuerySet",
+		BaseVersion:   baseVersion,
+		NewVersion:    version.Uint32(),
+		Modifications: []protocol.QuerySetModification{protocol.NewQuerySetRemove(wireQueryID)},
 	}, nil
 }
 

@@ -56,12 +56,130 @@ type Query struct {
 }
 
 type QuerySetModification struct {
-	Type          string          `json:"type"`
-	QueryID       QueryID         `json:"queryId"`
-	UDFPath       string          `json:"udfPath,omitempty"`
-	Args          json.RawMessage `json:"args,omitempty"`
-	Journal       *string         `json:"journal,omitempty"`
-	ComponentPath *string         `json:"componentPath,omitempty"`
+	add    *Query
+	remove *QueryID
+}
+
+func NewQuerySetAdd(query Query) QuerySetModification {
+	copy := query
+	return QuerySetModification{add: &copy}
+}
+
+func NewQuerySetRemove(queryID QueryID) QuerySetModification {
+	copy := queryID
+	return QuerySetModification{remove: &copy}
+}
+
+func (mod QuerySetModification) IsAdd() bool {
+	return mod.add != nil
+}
+
+func (mod QuerySetModification) IsRemove() bool {
+	return mod.remove != nil
+}
+
+func (mod QuerySetModification) QueryID() QueryID {
+	if mod.add != nil {
+		return mod.add.QueryID
+	}
+	if mod.remove != nil {
+		return *mod.remove
+	}
+	return 0
+}
+
+func (mod QuerySetModification) Query() (Query, bool) {
+	if mod.add == nil {
+		return Query{}, false
+	}
+	return *mod.add, true
+}
+
+func (mod QuerySetModification) MarshalJSON() ([]byte, error) {
+	if mod.add != nil && mod.remove != nil {
+		return nil, fmt.Errorf("query set modification must be either add or remove")
+	}
+	if mod.add != nil {
+		if mod.add.UDFPath == "" {
+			return nil, fmt.Errorf("query set add modification requires udfPath")
+		}
+		return json.Marshal(struct {
+			Type          string          `json:"type"`
+			QueryID       QueryID         `json:"queryId"`
+			UDFPath       string          `json:"udfPath"`
+			Args          json.RawMessage `json:"args,omitempty"`
+			Journal       *string         `json:"journal,omitempty"`
+			ComponentPath *string         `json:"componentPath,omitempty"`
+		}{
+			Type:          "Add",
+			QueryID:       mod.add.QueryID,
+			UDFPath:       mod.add.UDFPath,
+			Args:          mod.add.Args,
+			Journal:       mod.add.Journal,
+			ComponentPath: mod.add.ComponentPath,
+		})
+	}
+	if mod.remove != nil {
+		return json.Marshal(struct {
+			Type    string  `json:"type"`
+			QueryID QueryID `json:"queryId"`
+		}{
+			Type:    "Remove",
+			QueryID: *mod.remove,
+		})
+	}
+	return nil, fmt.Errorf("query set modification variant not set")
+}
+
+func (mod *QuerySetModification) UnmarshalJSON(data []byte) error {
+	var base struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &base); err != nil {
+		return err
+	}
+	switch base.Type {
+	case "Add":
+		var payload struct {
+			QueryID       QueryID         `json:"queryId"`
+			UDFPath       string          `json:"udfPath"`
+			Args          json.RawMessage `json:"args,omitempty"`
+			Journal       *string         `json:"journal,omitempty"`
+			ComponentPath *string         `json:"componentPath,omitempty"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.UDFPath == "" {
+			return fmt.Errorf("query set add modification missing udfPath")
+		}
+		query := Query{
+			QueryID:       payload.QueryID,
+			UDFPath:       payload.UDFPath,
+			Args:          payload.Args,
+			Journal:       payload.Journal,
+			ComponentPath: payload.ComponentPath,
+		}
+		mod.add = &query
+		mod.remove = nil
+		return nil
+	case "Remove":
+		var payload struct {
+			QueryID *QueryID `json:"queryId"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.QueryID == nil {
+			return fmt.Errorf("query set remove modification missing queryId")
+		}
+		copy := *payload.QueryID
+		mod.remove = &copy
+		mod.add = nil
+		return nil
+	default:
+		return fmt.Errorf("unknown query set modification type %q", base.Type)
+	}
 }
 
 type StateModification struct {

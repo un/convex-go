@@ -104,13 +104,14 @@ func newSyncTestServer(t *testing.T) *httptest.Server {
 			case "Authenticate":
 			case "ModifyQuerySet":
 				for _, mod := range message.Modifications {
-					if mod.Type != "Add" {
+					query, ok := mod.Query()
+					if !ok {
 						continue
 					}
 
 					payload, err := json.Marshal(NewValue(map[string]any{
 						"source": "server",
-						"query":  mod.UDFPath,
+						"query":  query.UDFPath,
 					}))
 					if err != nil {
 						t.Fatalf("marshal failed: %v", err)
@@ -129,7 +130,7 @@ func newSyncTestServer(t *testing.T) *httptest.Server {
 						},
 						Modifications: []protocol.StateModification{{
 							Type:    "QueryUpdated",
-							QueryID: mod.QueryID,
+							QueryID: query.QueryID,
 							Value:   payload,
 						}},
 					}
