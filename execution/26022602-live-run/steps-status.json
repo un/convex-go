@@ -77,8 +77,10 @@
     {
       "serial": 10,
       "name": "Implement typed ClientMessage variants",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 11,
