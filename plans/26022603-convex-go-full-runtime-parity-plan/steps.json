@@ -1,0 +1,551 @@
+{
+  "plan": "26022603-convex-go-full-runtime-parity-plan",
+  "created": "2026-02-26",
+  "goal": "Implement complete runtime parity without scaffolding for Convex Go sync client.",
+  "steps": [
+    {
+      "serial": 1,
+      "name": "Pin Rust runtime baseline",
+      "description": "Capture exact convex-rs commit and sync_types baseline used for this pass.",
+      "success_factors": [
+        "Baseline commit hash recorded",
+        "Relevant Rust modules referenced",
+        "All parity decisions traceable to baseline"
+      ],
+      "completed": true
+    },
+    {
+      "serial": 2,
+      "name": "Generate gap matrix",
+      "description": "Map current Go runtime behavior to expected Rust behavior at function-level granularity.",
+      "success_factors": [
+        "Every known gap listed",
+        "Each gap mapped to target behavior",
+        "Matrix is actionable for implementation"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 3,
+      "name": "Freeze scaffold inventory",
+      "description": "Create and lock a runtime scaffold inventory file covering code paths requiring replacement.",
+      "success_factors": [
+        "Inventory includes file and function",
+        "No known scaffold omitted",
+        "Inventory has closure status fields"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 4,
+      "name": "Add no-scaffold CI guard",
+      "description": "Add CI and local checks that fail when forbidden scaffold markers appear in runtime code paths.",
+      "success_factors": [
+        "Guard runs in CI",
+        "Forbidden markers are enforced",
+        "False-positive rate is acceptable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 5,
+      "name": "Document target runtime architecture",
+      "description": "Document final layering: protocol model, transport manager, base state, worker loop, public API facade.",
+      "success_factors": [
+        "Component boundaries are explicit",
+        "Message/control flow is clear",
+        "Concurrency ownership is defined"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 6,
+      "name": "Implement strict protocol identifiers",
+      "description": "Replace loose protocol identifiers with strict typed IDs and conversion helpers.",
+      "success_factors": [
+        "Typed IDs compile across runtime",
+        "Conversions are centralized",
+        "Identifier misuse is reduced"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 7,
+      "name": "Implement state version and timestamp encoding",
+      "description": "Implement strict StateVersion model and timestamp base64 helpers compatible with wire behavior.",
+      "success_factors": [
+        "Timestamp encoding roundtrips",
+        "StateVersion wire shape is exact",
+        "Invalid timestamps fail deterministically"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 8,
+      "name": "Implement typed Query and QuerySetModification models",
+      "description": "Replace map-like payload handling with strict Add/Remove query-set modification modeling.",
+      "success_factors": [
+        "Add and Remove variants are explicit",
+        "Optional fields are handled correctly",
+        "Roundtrip tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 9,
+      "name": "Implement typed StateModification models",
+      "description": "Model QueryUpdated, QueryFailed, and QueryRemoved explicitly with strict field semantics.",
+      "success_factors": [
+        "All state modification variants modeled",
+        "Error data handling is explicit",
+        "Decoder rejects malformed variants"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 10,
+      "name": "Implement typed AuthenticationToken variants",
+      "description": "Implement Admin/User/None token variants and acting-as payload handling.",
+      "success_factors": [
+        "Token variants are explicit",
+        "Acting-as payload is preserved",
+        "Backward compatible auth decode works"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 11,
+      "name": "Implement ClientMessage Connect variant",
+      "description": "Implement strict Connect shape with required and optional fields and defaults.",
+      "success_factors": [
+        "Connect model is strict",
+        "Defaulting behavior matches expectation",
+        "Connect roundtrip tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 12,
+      "name": "Implement remaining ClientMessage variants",
+      "description": "Implement ModifyQuerySet, Mutation, Action, Authenticate, and Event client variants.",
+      "success_factors": [
+        "All client variants represented",
+        "Variant-required fields validated",
+        "Roundtrip tests pass for all variants"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 13,
+      "name": "Implement ServerMessage Transition and Chunk variants",
+      "description": "Implement strict Transition and TransitionChunk server variants with full field typing.",
+      "success_factors": [
+        "Transition fields are modeled",
+        "Chunk metadata is complete",
+        "Decode failures are deterministic"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 14,
+      "name": "Implement remaining ServerMessage variants",
+      "description": "Implement MutationResponse, ActionResponse, AuthError, FatalError, and Ping variants.",
+      "success_factors": [
+        "All response variants represented",
+        "Success/error unions are explicit",
+        "Optional fields are validated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 15,
+      "name": "Implement strict client codec encode path",
+      "description": "Replace permissive marshal logic with strict client variant encoder and field validation.",
+      "success_factors": [
+        "Encode output matches expected wire keys",
+        "Invalid variant shapes fail early",
+        "Fixture parity checks pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 16,
+      "name": "Implement strict client codec decode path",
+      "description": "Implement strict decoder for client messages with defaulting and compatibility behavior.",
+      "success_factors": [
+        "Decode accepts valid payloads",
+        "Malformed payloads fail with stable errors",
+        "Compatibility cases are covered"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 17,
+      "name": "Implement strict server codec encode path",
+      "description": "Implement strict server encoder for transitions and response unions.",
+      "success_factors": [
+        "Encode preserves semantics",
+        "ErrorData behavior is correct",
+        "Server fixture roundtrips pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 18,
+      "name": "Implement strict server codec decode path",
+      "description": "Implement strict decoder for server variants including optional/null edge behavior.",
+      "success_factors": [
+        "Variant decode is complete",
+        "Null vs missing fields handled correctly",
+        "Malformed unions are rejected"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 19,
+      "name": "Add malformed protocol corpus tests",
+      "description": "Create a corpus of malformed inputs covering missing fields, wrong types, and unknown variants.",
+      "success_factors": [
+        "Corpus covers major failure classes",
+        "Decoder rejects malformed messages",
+        "Error classification is asserted"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 20,
+      "name": "Import Rust fixture vectors",
+      "description": "Add reproducible fixture import path from rust baseline for protocol/value conformance.",
+      "success_factors": [
+        "Fixtures imported reproducibly",
+        "Baseline linkage documented",
+        "Fixture updates are automatable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 21,
+      "name": "Run fixture conformance gate",
+      "description": "Validate Go codec behavior against imported fixture vectors and fail on drift.",
+      "success_factors": [
+        "Fixture gate runs in CI",
+        "Conformance passes",
+        "Drift reports are actionable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 22,
+      "name": "Add codec fuzzing gate",
+      "description": "Add fuzz tests for protocol and value codecs seeded from fixtures and malformed corpus.",
+      "success_factors": [
+        "Fuzz tests execute reliably",
+        "No panic/crashers remain",
+        "Corpus growth is persisted"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 23,
+      "name": "Implement websocket dial handshake",
+      "description": "Implement production websocket dial with headers, cancellation, and handshake failure propagation.",
+      "success_factors": [
+        "Dial path handles context cancellation",
+        "Handshake errors include useful details",
+        "Connection setup is testable"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 24,
+      "name": "Implement websocket connect message path",
+      "description": "Send strict Connect payload on open/reconnect with correct metadata and timestamp encoding.",
+      "success_factors": [
+        "Connect message emitted once per connection",
+        "Fields match expected schema",
+        "Open path tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 25,
+      "name": "Implement websocket write queue loop",
+      "description": "Implement queued writer loop ensuring ordering and non-blocking API behavior.",
+      "success_factors": [
+        "Writes preserve ordering",
+        "Backpressure behavior is defined",
+        "Write failures propagate"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 26,
+      "name": "Implement websocket read loop",
+      "description": "Implement reader loop decoding server frames and classifying close/decode/protocol failures.",
+      "success_factors": [
+        "Valid frames decode correctly",
+        "Close events handled cleanly",
+        "Decode errors are surfaced"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 27,
+      "name": "Implement heartbeat ping ticker",
+      "description": "Implement heartbeat schedule and ping message handling.",
+      "success_factors": [
+        "Heartbeat loop runs deterministically",
+        "Ping behavior is tested",
+        "No timer leaks"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 28,
+      "name": "Implement inactivity watchdog",
+      "description": "Trigger reconnect on server inactivity threshold breaches.",
+      "success_factors": [
+        "Inactivity threshold enforced",
+        "Reconnect request emitted",
+        "Timeout tests are deterministic"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 29,
+      "name": "Implement reconnect backoff jitter parity",
+      "description": "Align reconnect backoff growth, cap, jitter, and reset behavior with parity expectations.",
+      "success_factors": [
+        "Backoff sequence is validated",
+        "Cap/reset semantics are correct",
+        "Deterministic RNG tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 30,
+      "name": "Implement websocket state callback ordering",
+      "description": "Emit state transitions in deterministic order across connect, failure, and reconnect cycles.",
+      "success_factors": [
+        "State ordering is deterministic",
+        "Transitions are complete",
+        "Callback tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 31,
+      "name": "Add transport integration tests",
+      "description": "Validate open, send, read, heartbeat, inactivity, and reconnect using a controllable websocket test server.",
+      "success_factors": [
+        "Transport behavior is covered end-to-end",
+        "Failure paths are tested",
+        "Tests are stable under race detector"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 32,
+      "name": "Finalize RequestManager semantics",
+      "description": "Implement mutation/action completion semantics and replay ordering consistent with target behavior.",
+      "success_factors": [
+        "Mutation completion waits for visibility",
+        "Action completion semantics are correct",
+        "Replay order is deterministic"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 33,
+      "name": "Finalize LocalSyncState semantics",
+      "description": "Implement dedupe, subscriber lifecycle, query/identity versioning, and observed timestamp behavior.",
+      "success_factors": [
+        "Dedupe and subscriber mapping are correct",
+        "Version increments are correct",
+        "Observed timestamp tracking is correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 34,
+      "name": "Implement strict transition apply logic",
+      "description": "Apply transitions with start/end version checks and reconnect on mismatch.",
+      "success_factors": [
+        "Version mismatches trigger reconnect",
+        "State modifications apply correctly",
+        "Transition tests cover edge cases"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 35,
+      "name": "Implement TransitionChunk assembly",
+      "description": "Implement chunk buffering, ordering checks, completion assembly, and decoded transition processing.",
+      "success_factors": [
+        "Chunks assemble correctly",
+        "Out-of-order/invalid chunks fail cleanly",
+        "Assembled transition path is tested"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 36,
+      "name": "Finalize auth callback refresh semantics",
+      "description": "Implement immediate auth callback fetch and reconnect refresh with force_refresh semantics.",
+      "success_factors": [
+        "Initial callback invocation works",
+        "Reconnect refresh uses force_refresh=true",
+        "Identity version behavior is correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 37,
+      "name": "Implement replay queue rebuild",
+      "description": "Clear stale queue and rebuild replay set for auth, query set, and in-flight requests after reconnect.",
+      "success_factors": [
+        "Queue clear is enforced",
+        "Replay order is deterministic",
+        "Stale base-version replay is prevented"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 38,
+      "name": "Define worker command and event model",
+      "description": "Create strict worker command/event types connecting API calls, transport responses, and state updates.",
+      "success_factors": [
+        "Command model is explicit",
+        "Event routing is type-safe",
+        "Cancellation semantics are defined"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 39,
+      "name": "Implement worker main loop",
+      "description": "Implement dedicated worker loop integrating transport events and API commands with deterministic ordering.",
+      "success_factors": [
+        "Worker loop owns runtime transitions",
+        "Ordering semantics are deterministic",
+        "Loop exits cleanly on shutdown"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 40,
+      "name": "Implement flush-before-select behavior",
+      "description": "Ensure queued outbound replay and critical messages flush before normal select processing.",
+      "success_factors": [
+        "Flush-before-select invariant holds",
+        "Replay behavior is stable",
+        "Ordering tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 41,
+      "name": "Implement communicate-during-send behavior",
+      "description": "Ensure worker continues processing inbound protocol events while waiting on send completion.",
+      "success_factors": [
+        "Deadlock risk removed",
+        "Inbound events are not starved",
+        "Regression tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 42,
+      "name": "Implement protocol-failure reconnect propagation",
+      "description": "Propagate protocol failures into reconnect requests with reason and max observed timestamp.",
+      "success_factors": [
+        "All failure classes propagate",
+        "Reconnect payload is complete",
+        "Propagation tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 43,
+      "name": "Wire public Subscribe and Query through worker",
+      "description": "Route Subscribe and Query API calls through worker-managed runtime and real sync state.",
+      "success_factors": [
+        "No local-only query path remains",
+        "Query behavior matches subscribe-first-value",
+        "API tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 44,
+      "name": "Wire public Mutation and Action through worker",
+      "description": "Route Mutation and Action through worker/request manager semantics with strict completion behavior.",
+      "success_factors": [
+        "Mutation visibility semantics are correct",
+        "Action response semantics are correct",
+        "Error mapping is correct"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 45,
+      "name": "Wire watch_all, clone, and lifecycle semantics",
+      "description": "Implement consistent snapshots for watch_all and shared-runtime clone/close behavior.",
+      "success_factors": [
+        "watch_all snapshots are coherent",
+        "Clone shares underlying runtime",
+        "Shutdown avoids leaks/panics"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 46,
+      "name": "Wire auth APIs through worker runtime",
+      "description": "Route set_auth and set_auth_callback through worker with correct reconnect replay behavior.",
+      "success_factors": [
+        "Auth updates propagate to transport",
+        "Reconnect auth replay works",
+        "Auth integration tests pass"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 47,
+      "name": "Expand live integration suite",
+      "description": "Add live deployment tests for query, subscribe, mutation, action, reconnect, and auth refresh scenarios.",
+      "success_factors": [
+        "Live suite covers critical runtime flows",
+        "Reconnect scenario is validated",
+        "Auth-refresh scenario is validated"
+      ],
+      "completed": false
+    },
+    {
+      "serial": 48,
+      "name": "Run scaffold-zero audit and final parity gate",
+      "description": "Close all scaffold inventory entries and run final full validation gate (unit, race, fixtures, live).",
+      "success_factors": [
+        "Scaffold inventory is fully closed",
+        "All validation gates pass",
+        "Parity signoff report is produced"
+      ],
+      "completed": false
+    }
+  ],
+  "ordering_policy": "Execute steps strictly in listed order.",
+  "validation_policy": {
+    "always": [
+      "go test ./..."
+    ],
+    "periodic_race_gate_after_steps": [
+      22,
+      31,
+      42,
+      48
+    ],
+    "periodic_live_gate_after_steps": [
+      47,
+      48
+    ]
+  }
+}
