@@ -1189,7 +1189,7 @@
         "Known seeded regressions are caught",
         "Test harness drift is prevented"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 109,
