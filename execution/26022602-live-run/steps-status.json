@@ -222,8 +222,10 @@
     {
       "serial": 28,
       "name": "Implement full RequestManager semantics",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 29,
