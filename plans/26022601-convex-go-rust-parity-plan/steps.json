@@ -254,7 +254,7 @@
         "Unsupported tags produce deterministic errors",
         "Roundtrip decode behavior is stable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 24,
