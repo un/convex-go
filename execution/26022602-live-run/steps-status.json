@@ -352,8 +352,10 @@
     {
       "serial": 44,
       "name": "Implement real Query sugar path",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 45,
