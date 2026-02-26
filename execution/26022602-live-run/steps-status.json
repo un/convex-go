@@ -198,8 +198,10 @@
     {
       "serial": 25,
       "name": "Implement reconnect coordinator",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 26,
