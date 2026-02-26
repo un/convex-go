@@ -174,8 +174,10 @@
     {
       "serial": 22,
       "name": "Implement websocket send loop",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 23,
