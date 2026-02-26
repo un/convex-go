@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 10 typed-authentication-token-variants
+- Context: Auth token payloads were loose field bags, making Admin/User/None handling ambiguous and brittle.
+- Learning: A strict token variant model with compatibility aliases (`impersonating` -> `actingAs`) preserves backward compatibility without sacrificing validation.
+- Impact on next steps: Client and server message unions can now embed token variants directly instead of flattening token fields.
+
 ## 2026-02-26 Step 9 typed-state-modifications
 - Context: Transition apply logic depended on weakly typed state-modification payloads, which accepted malformed field combinations.
 - Learning: Explicit QueryUpdated/QueryFailed/QueryRemoved variants make error handling and transition apply paths simpler and safer.

@@ -111,7 +111,7 @@
         "Acting-as payload is preserved",
         "Backward compatible auth decode works"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 11,

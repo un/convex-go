@@ -169,3 +169,59 @@ func TestStateModificationRejectsMalformedVariant(t *testing.T) {
 		t.Fatalf("expected malformed state modification decode error")
 	}
 }
+
+func TestAuthenticationTokenVariantsRoundTrip(t *testing.T) {
+	admin := NewAdminAuthenticationToken("adm", json.RawMessage(`{"sub":"user_1"}`))
+	rawAdmin, err := json.Marshal(admin)
+	if err != nil {
+		t.Fatalf("marshal admin token failed: %v", err)
+	}
+	var decodedAdmin AuthenticationToken
+	if err := json.Unmarshal(rawAdmin, &decodedAdmin); err != nil {
+		t.Fatalf("unmarshal admin token failed: %v", err)
+	}
+	if adminPayload, ok := decodedAdmin.Admin(); !ok || adminPayload.Value != "adm" {
+		t.Fatalf("expected admin token variant")
+	}
+
+	user := NewUserAuthenticationToken("user-jwt")
+	rawUser, err := json.Marshal(user)
+	if err != nil {
+		t.Fatalf("marshal user token failed: %v", err)
+	}
+	var decodedUser AuthenticationToken
+	if err := json.Unmarshal(rawUser, &decodedUser); err != nil {
+		t.Fatalf("unmarshal user token failed: %v", err)
+	}
+	if userValue, ok := decodedUser.User(); !ok || userValue != "user-jwt" {
+		t.Fatalf("expected user token variant")
+	}
+
+	none := NewNoAuthenticationToken()
+	rawNone, err := json.Marshal(none)
+	if err != nil {
+		t.Fatalf("marshal none token failed: %v", err)
+	}
+	var decodedNone AuthenticationToken
+	if err := json.Unmarshal(rawNone, &decodedNone); err != nil {
+		t.Fatalf("unmarshal none token failed: %v", err)
+	}
+	if decodedNone.Kind() != "None" {
+		t.Fatalf("expected none token variant")
+	}
+}
+
+func TestAuthenticationTokenDecodeCompatibilityImpersonating(t *testing.T) {
+	raw := []byte(`{"tokenType":"Admin","value":"adm","impersonating":{"sub":"legacy"}}`)
+	var decoded AuthenticationToken
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		t.Fatalf("unmarshal compatibility token failed: %v", err)
+	}
+	adminPayload, ok := decoded.Admin()
+	if !ok {
+		t.Fatalf("expected admin token variant")
+	}
+	if string(adminPayload.ActingAs) != `{"sub":"legacy"}` {
+		t.Fatalf("unexpected actingAs payload: %s", string(adminPayload.ActingAs))
+	}
+}

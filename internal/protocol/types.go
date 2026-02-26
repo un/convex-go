@@ -373,9 +373,153 @@ func (mod *StateModification) UnmarshalJSON(data []byte) error {
 }
 
 type AuthenticationToken struct {
-	TokenType string          `json:"tokenType"`
-	Value     string          `json:"value,omitempty"`
-	ActingAs  json.RawMessage `json:"actingAs,omitempty"`
+	admin *AdminAuthenticationToken
+	user  *string
+	none  bool
+}
+
+type AdminAuthenticationToken struct {
+	Value    string
+	ActingAs json.RawMessage
+}
+
+func NewAdminAuthenticationToken(value string, actingAs json.RawMessage) AuthenticationToken {
+	copy := AdminAuthenticationToken{Value: value, ActingAs: actingAs}
+	return AuthenticationToken{admin: &copy}
+}
+
+func NewUserAuthenticationToken(value string) AuthenticationToken {
+	copy := value
+	return AuthenticationToken{user: &copy}
+}
+
+func NewNoAuthenticationToken() AuthenticationToken {
+	return AuthenticationToken{none: true}
+}
+
+func (token AuthenticationToken) Kind() string {
+	if token.admin != nil {
+		return "Admin"
+	}
+	if token.user != nil {
+		return "User"
+	}
+	if token.none {
+		return "None"
+	}
+	return ""
+}
+
+func (token AuthenticationToken) Admin() (AdminAuthenticationToken, bool) {
+	if token.admin == nil {
+		return AdminAuthenticationToken{}, false
+	}
+	return *token.admin, true
+}
+
+func (token AuthenticationToken) User() (string, bool) {
+	if token.user == nil {
+		return "", false
+	}
+	return *token.user, true
+}
+
+func (token AuthenticationToken) MarshalJSON() ([]byte, error) {
+	variants := 0
+	if token.admin != nil {
+		variants++
+	}
+	if token.user != nil {
+		variants++
+	}
+	if token.none {
+		variants++
+	}
+	if variants != 1 {
+		return nil, fmt.Errorf("authentication token must contain exactly one variant")
+	}
+
+	if token.admin != nil {
+		return json.Marshal(struct {
+			TokenType string          `json:"tokenType"`
+			Value     string          `json:"value"`
+			ActingAs  json.RawMessage `json:"actingAs,omitempty"`
+		}{
+			TokenType: "Admin",
+			Value:     token.admin.Value,
+			ActingAs:  token.admin.ActingAs,
+		})
+	}
+
+	if token.user != nil {
+		return json.Marshal(struct {
+			TokenType string `json:"tokenType"`
+			Value     string `json:"value"`
+		}{
+			TokenType: "User",
+			Value:     *token.user,
+		})
+	}
+
+	return json.Marshal(struct {
+		TokenType string `json:"tokenType"`
+	}{
+		TokenType: "None",
+	})
+}
+
+func (token *AuthenticationToken) UnmarshalJSON(data []byte) error {
+	var base struct {
+		TokenType string `json:"tokenType"`
+	}
+	if err := json.Unmarshal(data, &base); err != nil {
+		return err
+	}
+
+	switch base.TokenType {
+	case "Admin":
+		var payload struct {
+			Value        *string         `json:"value"`
+			ActingAs     json.RawMessage `json:"actingAs,omitempty"`
+			Impersonated json.RawMessage `json:"impersonating,omitempty"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.Value == nil {
+			return fmt.Errorf("admin authentication token missing value")
+		}
+		actingAs := payload.ActingAs
+		if len(actingAs) == 0 {
+			actingAs = payload.Impersonated
+		}
+		token.admin = &AdminAuthenticationToken{Value: *payload.Value, ActingAs: actingAs}
+		token.user = nil
+		token.none = false
+		return nil
+	case "User":
+		var payload struct {
+			Value *string `json:"value"`
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			return err
+		}
+		if payload.Value == nil {
+			return fmt.Errorf("user authentication token missing value")
+		}
+		copy := *payload.Value
+		token.user = &copy
+		token.admin = nil
+		token.none = false
+		return nil
+	case "None":
+		token.none = true
+		token.admin = nil
+		token.user = nil
+		return nil
+	default:
+		return fmt.Errorf("unknown authentication token type %q", base.TokenType)
+	}
 }
 
 type ClientMessage struct {
