@@ -85,8 +85,10 @@
     {
       "serial": 11,
       "name": "Implement typed ServerMessage variants",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 12,
