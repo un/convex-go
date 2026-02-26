@@ -705,7 +705,7 @@
         "Only one remove is emitted",
         "Version increments are correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 65,
