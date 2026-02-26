@@ -182,8 +182,10 @@
     {
       "serial": 23,
       "name": "Implement heartbeat and inactivity timeout",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 24,
