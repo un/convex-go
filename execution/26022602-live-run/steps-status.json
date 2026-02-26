@@ -214,8 +214,10 @@
     {
       "serial": 27,
       "name": "Add transport integration tests with local fake ws server",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 28,
