@@ -67,7 +67,7 @@
         "Regression tests fail before fix and pass after",
         "Closure criteria enforce test-backed fixes"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 7,
