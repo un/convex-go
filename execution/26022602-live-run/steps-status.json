@@ -392,8 +392,10 @@
     {
       "serial": 49,
       "name": "Build deterministic fake sync manager for tests",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 50,
