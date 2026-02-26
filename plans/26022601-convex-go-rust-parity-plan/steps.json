@@ -232,7 +232,7 @@
         "Error payload conversion logic matches Rust",
         "Debug/string formatting is acceptable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 22,
