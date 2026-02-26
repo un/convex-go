@@ -881,7 +881,7 @@
         "ProtocolResponse shapes are complete",
         "All users compile against interface"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 81,

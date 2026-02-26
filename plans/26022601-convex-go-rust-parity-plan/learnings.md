@@ -1,3 +1,8 @@
+## 2026-02-26 Step 80 define-syncprotocol-interface
+- Context: Define SyncProtocol interface
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 79 validation-gate-after-base-state-machine-implementation
 - Context: Validation gate after base state machine implementation
 - Learning: Validation and evidence-first execution keeps each step auditable.
