@@ -782,7 +782,7 @@
         "Error payload mapping is correct",
         "No transition wait is required"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 72,

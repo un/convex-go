@@ -1,3 +1,8 @@
+## 2026-02-26 Step 71 validate-mutation-immediate-completion-on-error
+- Context: Validate mutation immediate completion on error
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 70 validate-mutation-response-completion-gate-by-transition
 - Context: Validate mutation response completion gate by transition
 - Learning: Validation and evidence-first execution keeps each step auditable.
