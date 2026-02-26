@@ -142,8 +142,10 @@
     {
       "serial": 18,
       "name": "Implement production websocket dialer",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 19,
