@@ -246,8 +246,10 @@
     {
       "serial": 31,
       "name": "Implement non-transition server message handling",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 32,
