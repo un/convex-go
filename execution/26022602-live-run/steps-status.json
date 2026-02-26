@@ -303,8 +303,10 @@
     {
       "serial": 38,
       "name": "Implement flush-before-select ordering",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 39,
