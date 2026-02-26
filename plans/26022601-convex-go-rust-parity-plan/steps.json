@@ -298,7 +298,7 @@
         "Optional fields are represented correctly",
         "Type parity table marks this area complete"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 28,

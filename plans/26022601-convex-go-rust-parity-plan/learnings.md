@@ -1,3 +1,8 @@
+## 2026-02-26 Step 27 implement-query-and-state-modification-types
+- Context: Implement query and state modification types
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 26 implement-auth-and-identity-structs
 - Context: Implement auth and identity structs
 - Learning: Validation and evidence-first execution keeps each step auditable.
