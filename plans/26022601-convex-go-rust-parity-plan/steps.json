@@ -1035,7 +1035,7 @@
         "Deadlock regression is prevented",
         "Queue drain remains correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 95,
