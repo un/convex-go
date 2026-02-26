@@ -353,7 +353,7 @@
         "Action completion semantics are correct",
         "Replay order is deterministic"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 33,

@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 32 requestmanager-semantics
+- Context: Mutation replay/completion semantics were under-specified and allowed unresolved mutations to complete prematurely.
+- Learning: Explicit `WaitingOnTS` tracking is required so mutation completion only occurs after response visibility timestamps are established.
+- Impact on next steps: Local sync state and transition apply logic can now rely on deterministic request completion invariants.
+
 ## 2026-02-26 Step 31 transport-integration-tests
 - Context: Individual transport unit tests existed, but lifecycle behavior (open/send/read/reconnect) needed integrated validation under race detector.
 - Learning: A controllable websocket integration test plus race-gate execution exposed and fixed a real channel-close/send race in transport shutdown.
