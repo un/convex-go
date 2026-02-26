@@ -262,8 +262,10 @@
     {
       "serial": 33,
       "name": "Implement replay queue rebuild on reconnect",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 34,
