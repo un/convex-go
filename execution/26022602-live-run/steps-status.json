@@ -457,8 +457,10 @@
     {
       "serial": 57,
       "name": "Run scaffold-zero audit",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 58,
