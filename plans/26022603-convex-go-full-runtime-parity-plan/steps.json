@@ -56,7 +56,7 @@
         "Message/control flow is clear",
         "Concurrency ownership is defined"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 6,

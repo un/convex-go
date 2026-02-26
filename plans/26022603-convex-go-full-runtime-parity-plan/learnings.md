@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 5 document-target-runtime-architecture
+- Context: Parity implementation touches transport, state, and API simultaneously, so ownership boundaries must be explicit before refactors.
+- Learning: Defining single-writer ownership (worker for state transitions, transport for websocket internals) prevents race-prone split responsibility.
+- Impact on next steps: Protocol and transport refactors should enforce this boundary instead of adding more logic to `convex/client.go`.
+
 ## 2026-02-26 Step 4 add-no-scaffold-ci-guard
 - Context: Runtime parity work needs an automated guard to prevent regressions back to scaffold markers.
 - Learning: A marker-based guard with an explicit allowlist keeps CI strict while still allowing staged removal of known legacy paths.
