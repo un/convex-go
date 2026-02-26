@@ -224,7 +224,7 @@ func (m *WebSocketManager) writeLoop(conn *websocket.Conn, queue <-chan []byte, 
 
 func (m *WebSocketManager) readLoop(conn *websocket.Conn) {
 	for {
-		_, payload, err := conn.ReadMessage()
+		messageType, payload, err := conn.ReadMessage()
 		if err != nil {
 			var stop chan struct{}
 			m.mu.Lock()
@@ -236,18 +236,33 @@ func (m *WebSocketManager) readLoop(conn *websocket.Conn) {
 			}
 			m.mu.Unlock()
 			safeClose(stop)
-			m.emitResponse(ProtocolResponse{Err: err})
+			m.emitResponse(ProtocolResponse{Err: classifyReadError(err)})
 			return
+		}
+
+		if messageType != websocket.TextMessage {
+			m.emitResponse(ProtocolResponse{Err: fmt.Errorf("unsupported websocket frame type %d", messageType)})
+			continue
 		}
 
 		message, err := protocol.DecodeServerMessage(payload)
 		if err != nil {
-			m.emitResponse(ProtocolResponse{Err: err})
+			m.emitResponse(ProtocolResponse{Err: fmt.Errorf("protocol decode failure: %w", err)})
 			continue
 		}
 
 		m.emitResponse(ProtocolResponse{Message: &message})
 	}
+}
+
+func classifyReadError(err error) error {
+	if closeErr, ok := err.(*websocket.CloseError); ok {
+		return fmt.Errorf("websocket close frame: code=%d reason=%s", closeErr.Code, closeErr.Text)
+	}
+	if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+		return fmt.Errorf("websocket closed: %w", err)
+	}
+	return fmt.Errorf("websocket read failed: %w", err)
 }
 
 func (m *WebSocketManager) emitResponse(response ProtocolResponse) {

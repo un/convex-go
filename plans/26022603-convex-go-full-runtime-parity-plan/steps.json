@@ -287,7 +287,7 @@
         "Close events handled cleanly",
         "Decode errors are surfaced"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 27,

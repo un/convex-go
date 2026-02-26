@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 26 websocket-read-loop-classification
+- Context: Reader loop surfaced raw websocket/decode errors without consistent failure classes.
+- Learning: Explicit classification for close frames, read failures, frame-type mismatches, and protocol decode failures improves reconnect reason quality and testability.
+- Impact on next steps: Heartbeat/watchdog and reconnect logic can branch on clearer transport failure signals.
+
 ## 2026-02-26 Step 25 websocket-write-queue-loop
 - Context: Direct websocket writes coupled API send latency to socket I/O and made ordering guarantees implicit.
 - Learning: A dedicated write queue + writer loop preserves send order and defines clear backpressure behavior (`queue full` error) without blocking on network writes.

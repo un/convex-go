@@ -190,3 +190,75 @@ func TestWebSocketWriteQueuePreservesOrdering(t *testing.T) {
 		}
 	}
 }
+
+func TestWebSocketReadLoopClassifiesDecodeFailures(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		go func() {
+			defer conn.Close()
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			_ = conn.WriteMessage(websocket.TextMessage, []byte(`not-json`))
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	defer manager.Close()
+
+	responses, err := manager.Open(context.Background(), ReconnectRequest{})
+	if err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+	select {
+	case response := <-responses:
+		if response.Err == nil || !strings.Contains(response.Err.Error(), "protocol decode failure") {
+			t.Fatalf("expected protocol decode failure, got %+v", response)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for decode failure response")
+	}
+}
+
+func TestWebSocketReadLoopClassifiesCloseFrames(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		go func() {
+			defer conn.Close()
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "done"), time.Now().Add(time.Second))
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	defer manager.Close()
+
+	responses, err := manager.Open(context.Background(), ReconnectRequest{})
+	if err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+	select {
+	case response := <-responses:
+		if response.Err == nil || !strings.Contains(response.Err.Error(), "close frame") {
+			t.Fatalf("expected close frame classification, got %+v", response)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for close frame classification")
+	}
+}
