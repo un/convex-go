@@ -344,8 +344,10 @@
     {
       "serial": 43,
       "name": "Implement real Subscribe path",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 44,
