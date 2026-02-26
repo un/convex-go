@@ -1123,7 +1123,7 @@
         "Subscriber/result mapping is correct",
         "Partial states are represented as expected"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 103,
