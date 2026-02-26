@@ -342,7 +342,7 @@
         "Success and error branches are correct",
         "Optional fields preserve parity"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 32,
