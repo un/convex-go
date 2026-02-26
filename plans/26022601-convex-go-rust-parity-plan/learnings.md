@@ -1,3 +1,8 @@
+## 2026-02-26 Step 47 implement-backoff-with-jitter
+- Context: Implement backoff with jitter
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 46 continuous-parity-diff-checks-against-rust
 - Context: Continuous parity diff checks against Rust
 - Learning: Validation and evidence-first execution keeps each step auditable.

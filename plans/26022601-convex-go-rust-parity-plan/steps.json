@@ -518,7 +518,7 @@
         "Reset/fail behavior is tested",
         "Deterministic rng tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 48,
