@@ -1,3 +1,8 @@
+## 2026-02-26 Step 84 implement-heartbeat-and-inactivity-logic
+- Context: Implement heartbeat and inactivity logic
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 83 implement-websocket-read-and-send-loops
 - Context: Implement websocket read and send loops
 - Learning: Validation and evidence-first execution keeps each step auditable.
