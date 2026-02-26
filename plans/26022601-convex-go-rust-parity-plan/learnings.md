@@ -1,3 +1,8 @@
+## 2026-02-26 Step 37 add-fuzz-tests-for-message-codecs
+- Context: Add fuzz tests for message codecs
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 36 validate-malformed-protocol-payloads
 - Context: Validate malformed protocol payloads
 - Learning: Validation and evidence-first execution keeps each step auditable.
