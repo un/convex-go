@@ -331,7 +331,7 @@
         "Wire keys match Rust conventions",
         "Known malformed payloads fail predictably"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 31,

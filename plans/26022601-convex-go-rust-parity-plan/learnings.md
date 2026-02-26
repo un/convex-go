@@ -1,3 +1,8 @@
+## 2026-02-26 Step 30 implement-clientmessage-codec
+- Context: Implement ClientMessage codec
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 29 implement-servermessage-model
 - Context: Implement ServerMessage model
 - Learning: Validation and evidence-first execution keeps each step auditable.
