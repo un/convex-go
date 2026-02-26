@@ -1,3 +1,8 @@
+## 2026-02-26 Step 109 add-integration-tests-against-live-convex
+- Context: Add integration tests against live Convex
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 108 validation-gate-after-test-harness-implementation
 - Context: Validation gate after test harness implementation
 - Learning: Validation and evidence-first execution keeps each step auditable.

@@ -1200,7 +1200,7 @@
         "Realtime update flow is validated",
         "Reconnect scenario is covered"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 110,
