@@ -45,8 +45,10 @@
     {
       "serial": 6,
       "name": "Implement exact Value wire encoding",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 7,
