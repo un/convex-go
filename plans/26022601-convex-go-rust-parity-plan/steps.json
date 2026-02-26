@@ -1013,7 +1013,7 @@
         "Ordering matches intended semantics",
         "Queued replay is sent predictably"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 93,

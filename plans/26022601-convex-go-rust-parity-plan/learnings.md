@@ -1,3 +1,8 @@
+## 2026-02-26 Step 92 validate-worker-flush-before-select-ordering
+- Context: Validate worker flush-before-select ordering
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 91 implement-worker-main-loop
 - Context: Implement worker main loop
 - Learning: Validation and evidence-first execution keeps each step auditable.
