@@ -136,6 +136,38 @@ func TestWebSocketStateCallbackOrderingReconnect(t *testing.T) {
 	}
 }
 
+func TestTransitionVersionMismatchTriggersReconnect(t *testing.T) {
+	server := newMismatchedTransitionServer(t)
+	defer server.Close()
+
+	states := make(chan WebSocketState, 16)
+	client := NewClientBuilder().
+		WithDeploymentURL(server.URL).
+		WithWebSocketStateCallback(func(state WebSocketState) {
+			states <- state
+		}).
+		Build()
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := client.Query(ctx, "test:query", map[string]any{"x": 1}); err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case state := <-states:
+			if state == WebSocketStateReconnecting {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("expected reconnecting state after transition version mismatch")
+		}
+	}
+}
+
 func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	t.Helper()
 	select {
@@ -220,6 +252,79 @@ func newReconnectingSyncTestServer(t *testing.T) *httptest.Server {
 					t.Fatalf("encode failed: %v", err)
 				}
 				if err := conn.WriteMessage(websocket.TextMessage, bytes); err != nil {
+					return
+				}
+			}
+		}
+	}))
+}
+
+func newMismatchedTransitionServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	upgrader := websocket.Upgrader{}
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/sync" {
+			http.NotFound(w, r)
+			return
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		for {
+			_, data, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			message, err := protocol.DecodeClientMessage(data)
+			if err != nil {
+				continue
+			}
+			if message.Type != "ModifyQuerySet" {
+				continue
+			}
+			for _, mod := range message.Modifications {
+				query, ok := mod.Query()
+				if !ok {
+					continue
+				}
+				payload, err := json.Marshal(NewValue(map[string]any{"source": "server", "query": query.UDFPath}))
+				if err != nil {
+					t.Fatalf("marshal failed: %v", err)
+				}
+				good := protocol.ServerMessage{
+					Type:         "Transition",
+					StartVersion: &protocol.StateVersion{QuerySet: 0, Identity: 0, TS: protocol.NewTimestamp(0)},
+					EndVersion:   &protocol.StateVersion{QuerySet: 1, Identity: 0, TS: protocol.NewTimestamp(1)},
+					Modifications: []protocol.StateModification{
+						protocol.NewStateModificationQueryUpdated(query.QueryID, payload, nil),
+					},
+				}
+				goodBytes, err := protocol.EncodeServerMessage(good)
+				if err != nil {
+					t.Fatalf("encode failed: %v", err)
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, goodBytes); err != nil {
+					return
+				}
+
+				bad := protocol.ServerMessage{
+					Type:         "Transition",
+					StartVersion: &protocol.StateVersion{QuerySet: 9, Identity: 0, TS: protocol.NewTimestamp(9)},
+					EndVersion:   &protocol.StateVersion{QuerySet: 10, Identity: 0, TS: protocol.NewTimestamp(10)},
+					Modifications: []protocol.StateModification{
+						protocol.NewStateModificationQueryRemoved(query.QueryID),
+					},
+				}
+				badBytes, err := protocol.EncodeServerMessage(bad)
+				if err != nil {
+					t.Fatalf("encode failed: %v", err)
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, badBytes); err != nil {
 					return
 				}
 			}

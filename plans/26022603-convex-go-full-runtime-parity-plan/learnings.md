@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 34 strict-transition-apply
+- Context: Transition application accepted any start version, risking silent state divergence.
+- Learning: Enforcing start/end version requirements and mismatch-triggered reconnect is essential to keep client/server state synchronized.
+- Impact on next steps: Transition-chunk assembly can now feed into a strict version-checked apply pipeline.
+
 ## 2026-02-26 Step 33 localsyncstate-semantics
 - Context: Local sync semantics needed stronger guarantees around dedupe/versioning/subscriber lifecycle and observed timestamp monotonicity.
 - Learning: Exhaustive state-semantic tests are the fastest way to lock correctness before deeper transition/worker refactors.

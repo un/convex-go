@@ -55,8 +55,9 @@ type Client struct {
 	watchers         map[int64]chan map[int64]Value
 	nextWatcherID    int64
 
-	nextRequestID protocol.RequestSequenceNumber
-	pending       map[protocol.RequestSequenceNumber]*pendingRequest
+	nextRequestID  protocol.RequestSequenceNumber
+	pending        map[protocol.RequestSequenceNumber]*pendingRequest
+	lastTransition *protocol.StateVersion
 
 	authToken   *string
 	authFetcher AuthTokenFetcher
@@ -418,11 +419,19 @@ func (c *Client) handleServerMessage(message protocol.ServerMessage) {
 
 func (c *Client) handleTransition(message protocol.ServerMessage) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if message.EndVersion != nil {
-		c.state.UpdateObservedTimestamp(message.EndVersion.TS.Uint64())
+	if message.StartVersion == nil || message.EndVersion == nil {
+		c.mu.Unlock()
+		c.onProtocolFailure(fmt.Errorf("transition missing start/end version"))
+		return
 	}
+	if c.lastTransition != nil && !stateVersionEqual(*c.lastTransition, *message.StartVersion) {
+		expected := *c.lastTransition
+		actual := *message.StartVersion
+		c.mu.Unlock()
+		c.onProtocolFailure(fmt.Errorf("transition start version mismatch: got (%d,%d,%d) want (%d,%d,%d)", actual.QuerySet, actual.Identity, actual.TS.Uint64(), expected.QuerySet, expected.Identity, expected.TS.Uint64()))
+		return
+	}
+	c.state.UpdateObservedTimestamp(message.EndVersion.TS.Uint64())
 
 	for _, modification := range message.Modifications {
 		switch modification.Kind() {
@@ -461,9 +470,12 @@ func (c *Client) handleTransition(message protocol.ServerMessage) {
 			c.state.SetQueryValue(queryID.Uint64(), NewNullValue())
 		}
 	}
+	endVersion := *message.EndVersion
+	c.lastTransition = &endVersion
 
 	c.resolveMutationVisibilityLocked()
 	c.broadcastWatchersLocked()
+	c.mu.Unlock()
 }
 
 func (c *Client) handleMutationResponse(message protocol.ServerMessage) {
@@ -561,6 +573,7 @@ func (c *Client) onProtocolFailure(err error) {
 	}
 	c.connected = false
 	c.reconnecting = true
+	c.lastTransition = nil
 	observed := c.state.ObservedTimestamp()
 	c.mu.Unlock()
 
@@ -869,4 +882,8 @@ func nonBlockingSendSnapshot(ch chan map[int64]Value, snapshot map[int64]Value) 
 	case ch <- copied:
 	default:
 	}
+}
+
+func stateVersionEqual(a, b protocol.StateVersion) bool {
+	return a.QuerySet == b.QuerySet && a.Identity == b.Identity && a.TS == b.TS
 }
