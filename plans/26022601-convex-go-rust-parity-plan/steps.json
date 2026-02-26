@@ -1090,7 +1090,7 @@
         "Admin acting-as payload path works",
         "Reconnect refresh path is verified"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 100,

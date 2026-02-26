@@ -1,3 +1,8 @@
+## 2026-02-26 Step 99 implement-auth-apis
+- Context: Implement auth APIs
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 98 implement-query-mutation-action-apis
 - Context: Implement query, mutation, action APIs
 - Learning: Validation and evidence-first execution keeps each step auditable.
