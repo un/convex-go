@@ -543,6 +543,129 @@ type ClientMessage struct {
 	Event                json.RawMessage        `json:"event,omitempty"`
 }
 
+type clientMessageJSON struct {
+	Type                 string                 `json:"type"`
+	SessionID            string                 `json:"sessionId,omitempty"`
+	ConnectionCount      *uint32                `json:"connectionCount,omitempty"`
+	LastCloseReason      *string                `json:"lastCloseReason,omitempty"`
+	MaxObservedTimestamp *string                `json:"maxObservedTimestamp,omitempty"`
+	ClientTS             *int64                 `json:"clientTs,omitempty"`
+	BaseVersion          uint32                 `json:"baseVersion,omitempty"`
+	NewVersion           uint32                 `json:"newVersion,omitempty"`
+	Modifications        []QuerySetModification `json:"modifications,omitempty"`
+	RequestID            RequestSequenceNumber  `json:"requestId,omitempty"`
+	UDFPath              string                 `json:"udfPath,omitempty"`
+	Args                 json.RawMessage        `json:"args,omitempty"`
+	ComponentPath        *string                `json:"componentPath,omitempty"`
+	TokenType            string                 `json:"tokenType,omitempty"`
+	Value                string                 `json:"value,omitempty"`
+	ActingAs             json.RawMessage        `json:"actingAs,omitempty"`
+	EventType            string                 `json:"eventType,omitempty"`
+	Event                json.RawMessage        `json:"event,omitempty"`
+}
+
+func (msg ClientMessage) MarshalJSON() ([]byte, error) {
+	if msg.Type != "Connect" {
+		return json.Marshal(clientMessageJSON{
+			Type:          msg.Type,
+			BaseVersion:   msg.BaseVersion,
+			NewVersion:    msg.NewVersion,
+			Modifications: msg.Modifications,
+			RequestID:     msg.RequestID,
+			UDFPath:       msg.UDFPath,
+			Args:          msg.Args,
+			ComponentPath: msg.ComponentPath,
+			TokenType:     msg.TokenType,
+			Value:         msg.Value,
+			ActingAs:      msg.ActingAs,
+			EventType:     msg.EventType,
+			Event:         msg.Event,
+		})
+	}
+
+	if msg.SessionID == "" {
+		return nil, fmt.Errorf("connect message missing sessionId")
+	}
+	if _, err := NewSessionID(msg.SessionID.String()); err != nil {
+		return nil, err
+	}
+	lastCloseReason := msg.LastCloseReason
+	if lastCloseReason == "" {
+		lastCloseReason = "unknown"
+	}
+	payload := clientMessageJSON{
+		Type:            "Connect",
+		SessionID:       msg.SessionID.String(),
+		ConnectionCount: &msg.ConnectionCount,
+		LastCloseReason: &lastCloseReason,
+		ClientTS:        msg.ClientTS,
+	}
+	if msg.MaxObservedTimestamp != "" {
+		payload.MaxObservedTimestamp = &msg.MaxObservedTimestamp
+	}
+	return json.Marshal(payload)
+}
+
+func (msg *ClientMessage) UnmarshalJSON(data []byte) error {
+	var base struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &base); err != nil {
+		return err
+	}
+
+	var payload clientMessageJSON
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+	msg.Type = payload.Type
+
+	if base.Type != "Connect" {
+		msg.BaseVersion = payload.BaseVersion
+		msg.NewVersion = payload.NewVersion
+		msg.Modifications = payload.Modifications
+		msg.RequestID = payload.RequestID
+		msg.UDFPath = payload.UDFPath
+		msg.Args = payload.Args
+		msg.ComponentPath = payload.ComponentPath
+		msg.TokenType = payload.TokenType
+		msg.Value = payload.Value
+		msg.ActingAs = payload.ActingAs
+		msg.EventType = payload.EventType
+		msg.Event = payload.Event
+		return nil
+	}
+
+	if payload.SessionID == "" {
+		return fmt.Errorf("connect message missing sessionId")
+	}
+	sessionID, err := NewSessionID(payload.SessionID)
+	if err != nil {
+		return err
+	}
+	if payload.ConnectionCount == nil {
+		return fmt.Errorf("connect message missing connectionCount")
+	}
+	lastCloseReason := "unknown"
+	if payload.LastCloseReason != nil {
+		lastCloseReason = *payload.LastCloseReason
+	}
+	maxObservedTimestamp := ""
+	if payload.MaxObservedTimestamp != nil {
+		if _, err := DecodeTimestamp(*payload.MaxObservedTimestamp); err != nil {
+			return fmt.Errorf("connect message invalid maxObservedTimestamp: %w", err)
+		}
+		maxObservedTimestamp = *payload.MaxObservedTimestamp
+	}
+
+	msg.SessionID = sessionID
+	msg.ConnectionCount = *payload.ConnectionCount
+	msg.LastCloseReason = lastCloseReason
+	msg.MaxObservedTimestamp = maxObservedTimestamp
+	msg.ClientTS = payload.ClientTS
+	return nil
+}
+
 type ServerMessage struct {
 	Type                string                `json:"type"`
 	StartVersion        *StateVersion         `json:"startVersion,omitempty"`

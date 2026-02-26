@@ -6,7 +6,7 @@ import (
 )
 
 func TestClientMessageCodecRoundTrip(t *testing.T) {
-	in := ClientMessage{Type: "Connect", SessionID: SessionID("session"), ConnectionCount: 1}
+	in := ClientMessage{Type: "Connect", SessionID: MustSessionID("f47ac10b-58cc-4372-a567-0e02b2c3d479"), ConnectionCount: 1}
 	raw, err := EncodeClientMessage(in)
 	if err != nil {
 		t.Fatalf("encode failed: %v", err)
@@ -17,6 +17,9 @@ func TestClientMessageCodecRoundTrip(t *testing.T) {
 	}
 	if out.Type != in.Type {
 		t.Fatalf("type mismatch: %s != %s", out.Type, in.Type)
+	}
+	if out.LastCloseReason != "unknown" {
+		t.Fatalf("expected connect default lastCloseReason, got %q", out.LastCloseReason)
 	}
 }
 
@@ -223,5 +226,33 @@ func TestAuthenticationTokenDecodeCompatibilityImpersonating(t *testing.T) {
 	}
 	if string(adminPayload.ActingAs) != `{"sub":"legacy"}` {
 		t.Fatalf("unexpected actingAs payload: %s", string(adminPayload.ActingAs))
+	}
+}
+
+func TestConnectDecodeRejectsMissingRequiredFields(t *testing.T) {
+	tests := [][]byte{
+		[]byte(`{"type":"Connect","connectionCount":1}`),
+		[]byte(`{"type":"Connect","sessionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479"}`),
+	}
+	for _, raw := range tests {
+		if _, err := DecodeClientMessage(raw); err == nil {
+			t.Fatalf("expected connect decode failure for payload %s", string(raw))
+		}
+	}
+}
+
+func TestConnectDecodeDefaultsAndTimestampValidation(t *testing.T) {
+	valid := []byte(`{"type":"Connect","sessionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","connectionCount":0}`)
+	decoded, err := DecodeClientMessage(valid)
+	if err != nil {
+		t.Fatalf("connect decode failed: %v", err)
+	}
+	if decoded.LastCloseReason != "unknown" {
+		t.Fatalf("expected default lastCloseReason=unknown, got %q", decoded.LastCloseReason)
+	}
+
+	invalidTS := []byte(`{"type":"Connect","sessionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","connectionCount":0,"maxObservedTimestamp":"bad"}`)
+	if _, err := DecodeClientMessage(invalidTS); err == nil {
+		t.Fatalf("expected invalid maxObservedTimestamp decode error")
 	}
 }

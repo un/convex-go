@@ -122,7 +122,7 @@
         "Defaulting behavior matches expectation",
         "Connect roundtrip tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 12,

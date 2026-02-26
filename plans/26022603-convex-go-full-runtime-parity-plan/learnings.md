@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 11 clientmessage-connect-variant
+- Context: Connect payload decoding accepted missing required fields and inconsistent defaults.
+- Learning: Variant-specific custom JSON logic allows strict required-field checks while still applying protocol-compatible defaults (`lastCloseReason = unknown`).
+- Impact on next steps: Remaining client message variants can be made strict by extending the same custom decode path.
+
 ## 2026-02-26 Step 10 typed-authentication-token-variants
 - Context: Auth token payloads were loose field bags, making Admin/User/None handling ambiguous and brittle.
 - Learning: A strict token variant model with compatibility aliases (`impersonating` -> `actingAs`) preserves backward compatibility without sacrificing validation.
