@@ -37,8 +37,10 @@
     {
       "serial": 5,
       "name": "Implement strict Value model",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 6,
