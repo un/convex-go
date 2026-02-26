@@ -166,7 +166,7 @@
         "Invalid variant shapes fail early",
         "Fixture parity checks pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 16,

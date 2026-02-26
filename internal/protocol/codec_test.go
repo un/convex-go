@@ -451,3 +451,28 @@ func TestServerRemainingVariantsRejectMalformedPayload(t *testing.T) {
 		}
 	}
 }
+
+func TestClientEncodeWireKeys(t *testing.T) {
+	message := ClientMessage{
+		Type:        "Authenticate",
+		BaseVersion: 3,
+		Token:       NewUserAuthenticationToken("jwt"),
+	}
+	encoded, err := EncodeClientMessage(message)
+	if err != nil {
+		t.Fatalf("encode authenticate failed: %v", err)
+	}
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal(encoded, &payload); err != nil {
+		t.Fatalf("decode encoded json failed: %v", err)
+	}
+	required := []string{"type", "baseVersion", "tokenType", "value"}
+	for _, key := range required {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("expected key %q in authenticate payload", key)
+		}
+	}
+	if _, ok := payload["actingAs"]; ok {
+		t.Fatalf("unexpected actingAs key for user token")
+	}
+}

@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 15 strict-client-codec-encode
+- Context: Client encode still depended mostly on implicit struct marshaling behavior.
+- Learning: Adding an explicit encode validator in the codec path gives stable early failures and keeps wire-shape guarantees centralized.
+- Impact on next steps: Apply the same explicit gate pattern to decode, including compatibility and malformed-input classification.
+
 ## 2026-02-26 Step 14 servermessage-remaining-variants
 - Context: Response/error server variants still allowed malformed unions and unknown message types to slip through decode.
 - Learning: Strict per-variant decode checks (including success/error union requirements) make protocol failures deterministic and actionable.
