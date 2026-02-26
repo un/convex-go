@@ -485,7 +485,7 @@
         "Errors indicate unsupported type",
         "Parity with Rust behavior is verified"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 45,
