@@ -551,7 +551,7 @@
         "Core fields match Rust concepts",
         "Thread ownership rules are clear"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 51,
