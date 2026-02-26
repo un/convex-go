@@ -496,7 +496,7 @@
         "Negative payload tests pass",
         "Any remediations are closed before proceeding"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 46,
