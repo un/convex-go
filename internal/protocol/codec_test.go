@@ -581,3 +581,59 @@ func TestMalformedProtocolCorpus(t *testing.T) {
 		})
 	}
 }
+
+func TestRustFixtureConformance(t *testing.T) {
+	type fixtureVector struct {
+		Name    string          `json:"name"`
+		Kind    string          `json:"kind"`
+		Payload json.RawMessage `json:"payload"`
+		Value   uint64          `json:"value"`
+		Encoded string          `json:"encoded"`
+	}
+	type fixtureFile struct {
+		SourceCommit string          `json:"source_commit"`
+		Vectors      []fixtureVector `json:"vectors"`
+	}
+
+	raw, err := os.ReadFile("testdata/rust_fixture_vectors.json")
+	if err != nil {
+		t.Fatalf("read rust fixture vectors failed: %v", err)
+	}
+	var fixtures fixtureFile
+	if err := json.Unmarshal(raw, &fixtures); err != nil {
+		t.Fatalf("decode rust fixture vectors failed: %v", err)
+	}
+	if fixtures.SourceCommit == "" {
+		t.Fatalf("rust fixture vectors missing source_commit")
+	}
+
+	for _, vector := range fixtures.Vectors {
+		vector := vector
+		t.Run(vector.Name, func(t *testing.T) {
+			switch vector.Kind {
+			case "timestamp":
+				encoded := EncodeTimestamp(vector.Value)
+				if encoded != vector.Encoded {
+					t.Fatalf("timestamp encode drift: got %q want %q", encoded, vector.Encoded)
+				}
+				decoded, err := DecodeTimestamp(vector.Encoded)
+				if err != nil {
+					t.Fatalf("timestamp decode failed: %v", err)
+				}
+				if decoded != vector.Value {
+					t.Fatalf("timestamp decode drift: got %d want %d", decoded, vector.Value)
+				}
+			case "client_decode":
+				message, err := DecodeClientMessage(vector.Payload)
+				if err != nil {
+					t.Fatalf("client fixture decode failed: %v", err)
+				}
+				if _, err := EncodeClientMessage(message); err != nil {
+					t.Fatalf("client fixture re-encode failed: %v", err)
+				}
+			default:
+				t.Fatalf("unknown fixture kind %q", vector.Kind)
+			}
+		})
+	}
+}

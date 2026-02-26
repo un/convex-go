@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 21 fixture-conformance-gate
+- Context: Imported fixtures are useful only if they actively gate protocol behavior in normal CI runs.
+- Learning: Embedding Rust fixture conformance checks in `go test` keeps drift detection continuous and avoids a separate, easy-to-skip gate.
+- Impact on next steps: Fuzzing can now seed from the same fixtures to broaden protocol robustness coverage.
+
 ## 2026-02-26 Step 20 import-rust-fixture-vectors
 - Context: Protocol conformance needed baseline-linked fixtures instead of hand-authored local-only examples.
 - Learning: A deterministic import script tied to the Rust source file and commit hash makes fixture updates auditable and repeatable.
