@@ -815,7 +815,7 @@
         "Stale version conflict is prevented",
         "Regression test is stable"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 75,

@@ -1,3 +1,8 @@
+## 2026-02-26 Step 74 validate-outgoing-queue-clear-before-replay
+- Context: Validate outgoing queue clear before replay
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 73 validate-request-replay-ordering-on-reconnect
 - Context: Validate request replay ordering on reconnect
 - Learning: Validation and evidence-first execution keeps each step auditable.
