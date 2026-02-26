@@ -177,7 +177,7 @@
         "Linting/format checks are enforced",
         "Pipeline is green on baseline"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 17,
