@@ -1,3 +1,8 @@
+## 2026-02-26 Step 68 validate-auth-callback-refresh-on-reconnect-behavior
+- Context: Validate auth callback refresh-on-reconnect behavior
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 67 validate-auth-callback-immediate-fetch-behavior
 - Context: Validate auth callback immediate fetch behavior
 - Learning: Validation and evidence-first execution keeps each step auditable.

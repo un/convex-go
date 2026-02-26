@@ -749,7 +749,7 @@
         "Force-refresh flag is true on reconnect",
         "Refreshed token is sent"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 69,
