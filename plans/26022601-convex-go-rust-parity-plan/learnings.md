@@ -1,3 +1,8 @@
+## 2026-02-26 Step 61 validate-query-dedupe-behavior
+- Context: Validate query dedupe behavior
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 60 validate-query-token-determinism-across-map-ordering
 - Context: Validate query token determinism across map ordering
 - Learning: Validation and evidence-first execution keeps each step auditable.

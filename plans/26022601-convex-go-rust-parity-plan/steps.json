@@ -672,7 +672,7 @@
         "No redundant add messages are sent",
         "Subscriber tracking remains correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 62,
