@@ -1112,7 +1112,7 @@
         "Timing/ordering is equivalent",
         "Regression guard test exists"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 102,

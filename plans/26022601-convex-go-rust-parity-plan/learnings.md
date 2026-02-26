@@ -1,3 +1,8 @@
+## 2026-02-26 Step 101 validate-query-sugar-equals-subscribe-first-value
+- Context: Validate query sugar equals subscribe-first-value
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 100 implement-client-lifecycle-semantics
 - Context: Implement client lifecycle semantics
 - Learning: Validation and evidence-first execution keeps each step auditable.
