@@ -1156,7 +1156,7 @@
         "Lifecycle/close semantics are validated",
         "API-level remediations are closed"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 106,
