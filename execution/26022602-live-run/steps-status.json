@@ -416,8 +416,10 @@
     {
       "serial": 52,
       "name": "Add live reconnect scenario tests",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 53,
