@@ -29,8 +29,10 @@
     {
       "serial": 4,
       "name": "Upgrade deterministic test primitives",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 5,
