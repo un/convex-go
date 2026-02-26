@@ -1,3 +1,8 @@
+## 2026-02-26 Step 43 validate-nested-object-determinism
+- Context: Validate nested object determinism
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 42 validate-integer-boundary-matrix
 - Context: Validate integer boundary matrix
 - Learning: Validation and evidence-first execution keeps each step auditable.

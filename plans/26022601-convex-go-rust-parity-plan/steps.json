@@ -474,7 +474,7 @@
         "Equivalent maps produce equal tokens",
         "Tests prove order-insensitivity"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 44,
