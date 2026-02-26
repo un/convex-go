@@ -188,7 +188,7 @@
         "Deterministic time source is injectable",
         "Foundational test helpers are documented"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 18,

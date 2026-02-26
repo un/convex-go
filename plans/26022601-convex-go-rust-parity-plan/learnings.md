@@ -1,3 +1,8 @@
+## 2026-02-26 Step 17 add-deterministic-test-utilities
+- Context: Add deterministic test utilities
+- Learning: Validation and evidence-first execution keeps each step auditable.
+- Impact on next steps: Reuse artifacts and validations from this step.
+
 ## 2026-02-26 Step 16 set-up-ci-and-quality-gates
 - Context: Set up CI and quality gates
 - Learning: Validation and evidence-first execution keeps each step auditable.
