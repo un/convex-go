@@ -1233,7 +1233,7 @@
         "Integration suite passes in configured environment",
         "Parity checklist reaches full signoff"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 113,
