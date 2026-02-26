@@ -158,8 +158,10 @@
     {
       "serial": 20,
       "name": "Implement websocket open handshake payload",
-      "completed": false,
-      "validations": []
+      "completed": true,
+      "validations": [
+        "go test ./..."
+      ]
     },
     {
       "serial": 21,
