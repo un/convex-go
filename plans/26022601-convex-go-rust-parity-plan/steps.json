@@ -793,7 +793,7 @@
         "Success and error actions are handled",
         "No transition dependency exists"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 73,
