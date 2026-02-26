@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 25 websocket-write-queue-loop
+- Context: Direct websocket writes coupled API send latency to socket I/O and made ordering guarantees implicit.
+- Learning: A dedicated write queue + writer loop preserves send order and defines clear backpressure behavior (`queue full` error) without blocking on network writes.
+- Impact on next steps: Reader/heartbeat/watchdog logic can now run independently from outbound write pressure.
+
 ## 2026-02-26 Step 24 websocket-connect-message-path
 - Context: Connect payload correctness across open/reconnect cycles was implicit and unverified.
 - Learning: Transport-level tests that capture first-frame connect messages lock in session metadata, reason propagation, and observed-timestamp encoding semantics.

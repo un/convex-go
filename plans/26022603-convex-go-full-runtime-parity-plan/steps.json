@@ -276,7 +276,7 @@
         "Backpressure behavior is defined",
         "Write failures propagate"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 26,

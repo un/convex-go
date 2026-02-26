@@ -15,22 +15,26 @@ import (
 )
 
 type WebSocketManager struct {
-	mu              sync.Mutex
-	wsURL           string
-	clientID        string
-	conn            *websocket.Conn
-	responses       chan ProtocolResponse
-	closed          bool
-	connectionCount uint32
-	lastCloseReason string
+	mu                 sync.Mutex
+	wsURL              string
+	clientID           string
+	conn               *websocket.Conn
+	writeQueue         chan []byte
+	writeStop          chan struct{}
+	writeQueueCapacity int
+	responses          chan ProtocolResponse
+	closed             bool
+	connectionCount    uint32
+	lastCloseReason    string
 }
 
 func NewWebSocketManager(wsURL, clientID string) *WebSocketManager {
 	return &WebSocketManager{
-		wsURL:           wsURL,
-		clientID:        clientID,
-		responses:       make(chan ProtocolResponse, 256),
-		lastCloseReason: "InitialConnect",
+		wsURL:              wsURL,
+		clientID:           clientID,
+		writeQueueCapacity: 256,
+		responses:          make(chan ProtocolResponse, 256),
+		lastCloseReason:    "InitialConnect",
 	}
 }
 
@@ -54,39 +58,28 @@ func (m *WebSocketManager) Send(ctx context.Context, message protocol.ClientMess
 	}
 
 	m.mu.Lock()
-	conn := m.conn
+	queue := m.writeQueue
 	closed := m.closed
 	m.mu.Unlock()
 
 	if closed {
 		return fmt.Errorf("websocket manager closed")
 	}
-	if conn == nil {
+	if queue == nil {
 		return fmt.Errorf("websocket not connected")
 	}
-
-	deadline, hasDeadline := ctx.Deadline()
-	if hasDeadline {
-		_ = conn.SetWriteDeadline(deadline)
-	} else {
-		_ = conn.SetWriteDeadline(time.Now().Add(15 * time.Second))
+	select {
+	case queue <- payload:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return fmt.Errorf("websocket write queue full")
 	}
-	if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
-		m.responses <- ProtocolResponse{Err: err}
-		return err
-	}
-	return nil
 }
 
 func (m *WebSocketManager) Reconnect(ctx context.Context, request ReconnectRequest) error {
-	m.mu.Lock()
-	conn := m.conn
-	m.conn = nil
-	m.mu.Unlock()
-
-	if conn != nil {
-		_ = conn.Close()
-	}
+	m.closeActiveConnection()
 	return m.openConn(ctx, request)
 }
 
@@ -98,10 +91,16 @@ func (m *WebSocketManager) Close() error {
 	}
 	m.closed = true
 	conn := m.conn
+	stop := m.writeStop
 	m.conn = nil
+	m.writeQueue = nil
+	m.writeStop = nil
 	close(m.responses)
 	m.mu.Unlock()
 
+	if stop != nil {
+		safeClose(stop)
+	}
 	if conn != nil {
 		return conn.Close()
 	}
@@ -130,7 +129,14 @@ func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectReques
 		_ = conn.Close()
 		return fmt.Errorf("websocket manager closed")
 	}
+	if m.writeStop != nil {
+		safeClose(m.writeStop)
+	}
 	m.conn = conn
+	m.writeQueue = make(chan []byte, m.writeQueueCapacity)
+	m.writeStop = make(chan struct{})
+	writeQueue := m.writeQueue
+	writeStop := m.writeStop
 	connCount := m.connectionCount
 	m.connectionCount++
 	if request.Reason != "" {
@@ -162,8 +168,23 @@ func (m *WebSocketManager) openConn(ctx context.Context, request ReconnectReques
 		return err
 	}
 
+	go m.writeLoop(conn, writeQueue, writeStop)
 	go m.readLoop(conn)
 	return nil
+}
+
+func (m *WebSocketManager) closeActiveConnection() {
+	m.mu.Lock()
+	conn := m.conn
+	stop := m.writeStop
+	m.conn = nil
+	m.writeQueue = nil
+	m.writeStop = nil
+	m.mu.Unlock()
+	safeClose(stop)
+	if conn != nil {
+		_ = conn.Close()
+	}
 }
 
 func formatDialError(ctx context.Context, wsURL string, response *http.Response, err error) error {
@@ -181,15 +202,40 @@ func formatDialError(ctx context.Context, wsURL string, response *http.Response,
 	return fmt.Errorf("websocket handshake to %s failed with %s: %w: %s", wsURL, response.Status, err, string(body))
 }
 
+func (m *WebSocketManager) writeLoop(conn *websocket.Conn, queue <-chan []byte, stop <-chan struct{}) {
+	for {
+		select {
+		case <-stop:
+			return
+		case payload := <-queue:
+			if err := conn.SetWriteDeadline(time.Now().Add(15 * time.Second)); err != nil {
+				m.emitResponse(ProtocolResponse{Err: err})
+				_ = conn.Close()
+				return
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+				m.emitResponse(ProtocolResponse{Err: err})
+				_ = conn.Close()
+				return
+			}
+		}
+	}
+}
+
 func (m *WebSocketManager) readLoop(conn *websocket.Conn) {
 	for {
 		_, payload, err := conn.ReadMessage()
 		if err != nil {
+			var stop chan struct{}
 			m.mu.Lock()
 			if m.conn == conn {
 				m.conn = nil
+				m.writeQueue = nil
+				stop = m.writeStop
+				m.writeStop = nil
 			}
 			m.mu.Unlock()
+			safeClose(stop)
 			m.emitResponse(ProtocolResponse{Err: err})
 			return
 		}
@@ -221,4 +267,14 @@ func (m *WebSocketManager) emitResponse(response ProtocolResponse) {
 	case responses <- response:
 	default:
 	}
+}
+
+func safeClose(ch chan struct{}) {
+	if ch == nil {
+		return
+	}
+	defer func() {
+		_ = recover()
+	}()
+	close(ch)
 }

@@ -128,3 +128,65 @@ func awaitConnectMessage(t *testing.T, messages <-chan protocol.ClientMessage) p
 		return protocol.ClientMessage{}
 	}
 }
+
+func TestWebSocketWriteQueuePreservesOrdering(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	received := make(chan string, 8)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		go func() {
+			defer conn.Close()
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			for {
+				_, payload, err := conn.ReadMessage()
+				if err != nil {
+					return
+				}
+				message, err := protocol.DecodeClientMessage(payload)
+				if err != nil {
+					continue
+				}
+				received <- message.EventType
+			}
+		}()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+	manager := NewWebSocketManager(wsURL, "test-client")
+	defer manager.Close()
+
+	if _, err := manager.Open(context.Background(), ReconnectRequest{}); err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+
+	messageTypes := []string{"first", "second", "third"}
+	for _, eventType := range messageTypes {
+		eventPayload := []byte(`{"ok":true}`)
+		if err := manager.Send(context.Background(), protocol.ClientMessage{
+			Type:      "Event",
+			EventType: eventType,
+			Event:     eventPayload,
+		}); err != nil {
+			t.Fatalf("send failed for %s: %v", eventType, err)
+		}
+	}
+
+	for _, expected := range messageTypes {
+		select {
+		case actual := <-received:
+			if actual != expected {
+				t.Fatalf("event ordering mismatch: got %s want %s", actual, expected)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatalf("timed out waiting for event %s", expected)
+		}
+	}
+}
