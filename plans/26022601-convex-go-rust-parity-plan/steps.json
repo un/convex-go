@@ -980,7 +980,7 @@
         "Reconnect logic engages as expected",
         "No deadlocks occur"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 90,
