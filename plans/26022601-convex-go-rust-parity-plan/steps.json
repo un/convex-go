@@ -309,7 +309,7 @@
         "Optional payloads are represented",
         "Compile-time checks prevent missing variants"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 29,
