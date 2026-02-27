@@ -2,3 +2,8 @@ AGENTS.md
 agents.md
 plans/
 .DS_Store
+.env
+.env.local
+demo/.env
+demo/convex-app/node_modules/
+demo/convex-app/.env.local

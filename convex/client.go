@@ -572,7 +572,7 @@ func (c *Client) handleWorkerRunRequest(cmd workerCommand, kind string) {
 		return
 	}
 
-	argsRaw, err := marshalWireValue(payload.args)
+	argsRaw, err := marshalFunctionArgs(payload.args)
 	if err != nil {
 		cmd.resolve(nil, err)
 		return
@@ -1138,7 +1138,7 @@ func (c *Client) replayState() error {
 		msg.Modifications = make([]protocol.QuerySetModification, 0, len(queries))
 		for _, queryID := range queryIDs {
 			query := queries[queryID]
-			args, err := marshalWireValue(query.args)
+			args, err := marshalFunctionArgs(query.args)
 			if err != nil {
 				return err
 			}
@@ -1163,7 +1163,7 @@ func (c *Client) replayState() error {
 }
 
 func (c *Client) buildModifyAddMessage(queryID uint64, path string, args map[string]any) (protocol.ClientMessage, error) {
-	argsRaw, err := marshalWireValue(args)
+	argsRaw, err := marshalFunctionArgs(args)
 	if err != nil {
 		return protocol.ClientMessage{}, err
 	}
@@ -1339,6 +1339,13 @@ func marshalWireValue(value any) (json.RawMessage, error) {
 		return nil, err
 	}
 	return payload, nil
+}
+
+func marshalFunctionArgs(args map[string]any) (json.RawMessage, error) {
+	if args == nil {
+		args = map[string]any{}
+	}
+	return marshalWireValue([]any{args})
 }
 
 func copyMap(input map[string]any) map[string]any {

@@ -18,6 +18,77 @@ import (
 	syncproto "github.com/get-convex/convex-go/internal/sync"
 )
 
+func TestOutboundFunctionArgsAreArrayWrapped(t *testing.T) {
+	client := newClient()
+	sent := make(chan protocol.ClientMessage, 16)
+
+	client.mu.Lock()
+	client.connected = true
+	client.workerStarted = true
+	client.sendFn = func(_ context.Context, message protocol.ClientMessage) error {
+		sent <- message
+		return nil
+	}
+	client.mu.Unlock()
+
+	go client.workerLoop()
+	t.Cleanup(client.Close)
+
+	sub, err := client.Subscribe(context.Background(), "messages:list", map[string]any{})
+	if err != nil {
+		t.Fatalf("subscribe failed: %v", err)
+	}
+	defer sub.Close()
+
+	modify := awaitSentMessageType(t, sent, "ModifyQuerySet")
+	if len(modify.Modifications) != 1 {
+		t.Fatalf("expected one query modification, got %d", len(modify.Modifications))
+	}
+	query, ok := modify.Modifications[0].Query()
+	if !ok {
+		t.Fatalf("expected query add modification")
+	}
+
+	var subscribeArgs []any
+	if err := json.Unmarshal(query.Args, &subscribeArgs); err != nil {
+		t.Fatalf("failed decoding subscribe args: %v", err)
+	}
+	if len(subscribeArgs) != 1 {
+		t.Fatalf("expected subscribe args array length 1, got %d (%s)", len(subscribeArgs), string(query.Args))
+	}
+	firstSubscribeArg, ok := subscribeArgs[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected subscribe first arg object, got %T", subscribeArgs[0])
+	}
+	if len(firstSubscribeArg) != 0 {
+		t.Fatalf("expected empty subscribe arg object, got %#v", firstSubscribeArg)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	_, _ = client.Mutation(ctx, "messages:create", map[string]any{"count": int64(1)})
+
+	mutation := awaitSentMessageType(t, sent, "Mutation")
+	var mutationArgs []any
+	if err := json.Unmarshal(mutation.Args, &mutationArgs); err != nil {
+		t.Fatalf("failed decoding mutation args: %v", err)
+	}
+	if len(mutationArgs) != 1 {
+		t.Fatalf("expected mutation args array length 1, got %d (%s)", len(mutationArgs), string(mutation.Args))
+	}
+	firstMutationArg, ok := mutationArgs[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected mutation first arg object, got %T", mutationArgs[0])
+	}
+	count, ok := firstMutationArg["count"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected mutation count encoded as object, got %#v", firstMutationArg["count"])
+	}
+	if got := count["$integer"]; got != "1" {
+		t.Fatalf("expected integer wire encoding %q, got %#v", "1", got)
+	}
+}
+
 func TestQueryMatchesSubscribeFirstValue(t *testing.T) {
 	server := newSyncTestServer(t)
 	defer server.Close()
@@ -607,6 +678,22 @@ func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	case <-time.After(2 * time.Second):
 		t.Fatalf("timed out waiting for websocket state callback")
 		return ""
+	}
+}
+
+func awaitSentMessageType(t *testing.T, sent <-chan protocol.ClientMessage, messageType string) protocol.ClientMessage {
+	t.Helper()
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case message := <-sent:
+			if message.Type == messageType {
+				return message
+			}
+		case <-deadline:
+			t.Fatalf("timed out waiting for client message type %q", messageType)
+			return protocol.ClientMessage{}
+		}
 	}
 }
 

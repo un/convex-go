@@ -1,0 +1,16 @@
+{
+  "name": "convex-go-demo-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy"
+  },
+  "dependencies": {
+    "convex": "^1.26.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

@@ -10,6 +10,13 @@ Set deployment URL and run the example:
 CONVEX_DEPLOYMENT_URL="https://<your-deployment>.convex.cloud" go run ./examples/quickstart
 ```
 
+## Live demo app
+
+There is a full live demo in `demo/` plus a matching Convex backend scaffold in `demo/convex-app`.
+
+- Demo docs: `demo/README.md`
+- Backend scaffold docs: `demo/convex-app/README.md`
+
 ## Testing
 
 - Unit tests: `go test ./...`
