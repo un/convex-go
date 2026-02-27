@@ -186,14 +186,17 @@ func (c *Client) WatchAll() *QuerySetSubscription {
 
 func (c *Client) SetAuth(token *string) {
 	c.mu.Lock()
-	c.authToken = token
-	c.state.SetAuthToken(token)
+	c.setAuthTokenLocked(token)
 	c.mu.Unlock()
 
 	_ = c.sendAuthenticate(context.Background(), token)
 }
 
 func (c *Client) SetAuthCallback(fetcher AuthTokenFetcher) error {
+	if fetcher == nil {
+		return fmt.Errorf("auth callback is required")
+	}
+
 	c.mu.Lock()
 	c.authFetcher = fetcher
 	c.mu.Unlock()
@@ -666,9 +669,13 @@ func (c *Client) reconnectLoop(reason string, observed uint64) {
 
 		if fetcher != nil {
 			token, err := fetcher(true)
-			if err == nil {
-				c.SetAuth(token)
+			if err != nil {
+				time.Sleep(backoff.Next())
+				continue
 			}
+			c.mu.Lock()
+			c.setAuthTokenLocked(token)
+			c.mu.Unlock()
 		}
 
 		err := manager.Reconnect(context.Background(), syncproto.ReconnectRequest{
@@ -916,6 +923,11 @@ func copyMap(input map[string]any) map[string]any {
 		out[key] = value
 	}
 	return out
+}
+
+func (c *Client) setAuthTokenLocked(token *string) {
+	c.authToken = token
+	c.state.SetAuthToken(token)
 }
 
 func (c *Client) emitState(state WebSocketState) {

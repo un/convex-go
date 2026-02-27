@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 36 auth-callback-refresh-semantics
+- Context: Reconnect auth refresh calls existed, but callback failure handling and refresh-side auth sends could produce ambiguous behavior.
+- Learning: Treating force-refresh callback failures as reconnect retry conditions and applying refreshed tokens without pre-reconnect sends makes auth replay deterministic.
+- Impact on next steps: Replay-queue rebuild can now rely on stable, single-path authenticate replay after reconnect.
+
 ## 2026-02-26 Step 35 transition-chunk-assembly
 - Context: `TransitionChunk` frames were treated as unsupported, which forced reconnect instead of applying valid chunked transitions.
 - Learning: Enforcing strict per-transition chunk ordering (`partNumber` sequence), deterministic assembly, and decode-as-Transition checks gives safe chunk support without silent state corruption.

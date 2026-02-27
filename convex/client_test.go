@@ -3,6 +3,7 @@ package convex
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -228,6 +229,77 @@ func TestTransitionChunkOutOfOrderTriggersReconnect(t *testing.T) {
 		case <-deadline:
 			t.Fatalf("expected reconnecting state after out-of-order transition chunk")
 		}
+	}
+}
+
+func TestSetAuthCallbackRequiresFetcher(t *testing.T) {
+	client := NewClient()
+	if err := client.SetAuthCallback(nil); err == nil {
+		t.Fatalf("expected error when auth callback is nil")
+	}
+}
+
+func TestSetAuthCallbackReconnectForceRefreshAndRetry(t *testing.T) {
+	server := newReconnectingSyncTestServer(t)
+	defer server.Close()
+
+	var (
+		mu       sync.Mutex
+		calls    []bool
+		refreshN int
+	)
+
+	client := NewClientBuilder().WithDeploymentURL(server.URL).Build()
+	defer client.Close()
+
+	err := client.SetAuthCallback(func(forceRefresh bool) (*string, error) {
+		mu.Lock()
+		calls = append(calls, forceRefresh)
+		if forceRefresh {
+			refreshN++
+			if refreshN == 1 {
+				mu.Unlock()
+				return nil, fmt.Errorf("temporary auth refresh failure")
+			}
+		}
+		mu.Unlock()
+
+		token := "token"
+		return &token, nil
+	})
+	if err != nil {
+		t.Fatalf("set auth callback failed: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := client.Query(ctx, "test:query", map[string]any{"x": 1}); err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(calls) < 3 {
+		t.Fatalf("expected initial + reconnect auth callback calls, got %v", calls)
+	}
+	if calls[0] {
+		t.Fatalf("expected first auth callback call with forceRefresh=false")
+	}
+	trueCalls := 0
+	for _, call := range calls {
+		if call {
+			trueCalls++
+		}
+	}
+	if trueCalls < 2 {
+		t.Fatalf("expected reconnect refresh retries with forceRefresh=true, got %v", calls)
+	}
+
+	client.mu.Lock()
+	identityVersion := client.state.IdentityVersion()
+	client.mu.Unlock()
+	if identityVersion < 2 {
+		t.Fatalf("expected identity version to advance across auth callback + reconnect refresh, got %d", identityVersion)
 	}
 }
 

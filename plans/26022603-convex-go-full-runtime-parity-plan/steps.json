@@ -397,7 +397,7 @@
         "Reconnect refresh uses force_refresh=true",
         "Identity version behavior is correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 37,
