@@ -3,9 +3,11 @@ package convex
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/get-convex/convex-go/internal/protocol"
+	syncproto "github.com/get-convex/convex-go/internal/sync"
 )
 
 func TestQueryMatchesSubscribeFirstValue(t *testing.T) {
@@ -339,6 +342,96 @@ func TestReconnectReplayOrderAuthQueriesThenPendingRequests(t *testing.T) {
 		if replayed[i] != want {
 			t.Fatalf("unexpected replay order at %d: got %s want %s (full: %v)", i, replayed[i], want, replayed)
 		}
+	}
+}
+
+func TestProtocolFailureReconnectPayloadIncludesReasonAndMaxObservedTimestamp(t *testing.T) {
+	client := newClient()
+	client.mu.Lock()
+	client.connected = true
+	client.state.UpdateObservedTimestamp(5)
+	client.pending[1] = &pendingRequest{kind: "mutation", waitingOnTS: true, visibleTS: 9}
+	requests := make(chan syncproto.ReconnectRequest, 1)
+	client.reconnectFn = func(_ context.Context, request syncproto.ReconnectRequest) error {
+		requests <- request
+		return nil
+	}
+	client.mu.Unlock()
+
+	client.onProtocolFailure(errors.New("protocol decode failure: malformed server frame"))
+
+	select {
+	case request := <-requests:
+		if !strings.Contains(request.Reason, "protocol decode failure") {
+			t.Fatalf("unexpected reconnect reason %q", request.Reason)
+		}
+		if request.MaxObservedTimestamp != 9 {
+			t.Fatalf("expected max observed timestamp 9, got %d", request.MaxObservedTimestamp)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for reconnect request")
+	}
+}
+
+func TestFailureClassesPropagateReconnectReason(t *testing.T) {
+	tests := []struct {
+		name           string
+		expectedReason string
+		trigger        func(*Client)
+	}{
+		{
+			name:           "auth error",
+			expectedReason: "auth error",
+			trigger: func(c *Client) {
+				c.handleServerMessage(protocol.ServerMessage{Type: "AuthError", Error: "bad token"})
+			},
+		},
+		{
+			name:           "fatal error",
+			expectedReason: "fatal error",
+			trigger: func(c *Client) {
+				c.handleServerMessage(protocol.ServerMessage{Type: "FatalError", Error: "boom"})
+			},
+		},
+		{
+			name:           "unknown server message",
+			expectedReason: "unknown server message type",
+			trigger: func(c *Client) {
+				c.handleServerMessage(protocol.ServerMessage{Type: "NotARealMessage"})
+			},
+		},
+		{
+			name:           "transport protocol failure",
+			expectedReason: "protocol decode failure",
+			trigger: func(c *Client) {
+				c.handleWorkerEvent(workerEvent{kind: workerEventTransportErr, err: errors.New("protocol decode failure: bad frame")})
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := newClient()
+			client.mu.Lock()
+			client.connected = true
+			requests := make(chan syncproto.ReconnectRequest, 1)
+			client.reconnectFn = func(_ context.Context, request syncproto.ReconnectRequest) error {
+				requests <- request
+				return nil
+			}
+			client.mu.Unlock()
+
+			tc.trigger(client)
+
+			select {
+			case request := <-requests:
+				if !strings.Contains(request.Reason, tc.expectedReason) {
+					t.Fatalf("expected reconnect reason containing %q, got %q", tc.expectedReason, request.Reason)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatalf("timed out waiting for reconnect request")
+			}
+		})
 	}
 }
 

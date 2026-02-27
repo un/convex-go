@@ -53,6 +53,7 @@ type Client struct {
 
 	manager         *syncproto.WebSocketManager
 	sendFn          func(context.Context, protocol.ClientMessage) error
+	reconnectFn     func(context.Context, syncproto.ReconnectRequest) error
 	responses       <-chan syncproto.ProtocolResponse
 	workerStarted   bool
 	workerCommands  chan workerCommand
@@ -784,6 +785,10 @@ func (c *Client) handleActionResponse(message protocol.ServerMessage) {
 }
 
 func (c *Client) onProtocolFailure(err error) {
+	if err == nil {
+		err = errors.New("unknown protocol failure")
+	}
+
 	c.mu.Lock()
 	if c.closed || c.reconnecting {
 		c.mu.Unlock()
@@ -793,7 +798,7 @@ func (c *Client) onProtocolFailure(err error) {
 	c.reconnecting = true
 	c.lastTransition = nil
 	c.transitionChunks = map[string]*transitionChunkBuffer{}
-	observed := c.state.ObservedTimestamp()
+	observed := c.maxObservedTimestampLocked()
 	c.mu.Unlock()
 
 	c.emitState(WebSocketStateReconnecting)
@@ -811,6 +816,7 @@ func (c *Client) reconnectLoop(reason string, observed uint64) {
 			return
 		}
 		manager := c.manager
+		reconnectFn := c.reconnectFn
 		fetcher := c.authFetcher
 		c.mu.Unlock()
 
@@ -825,7 +831,15 @@ func (c *Client) reconnectLoop(reason string, observed uint64) {
 			c.mu.Unlock()
 		}
 
-		err := manager.Reconnect(context.Background(), syncproto.ReconnectRequest{
+		if reconnectFn == nil {
+			if manager == nil {
+				time.Sleep(backoff.Next())
+				continue
+			}
+			reconnectFn = manager.Reconnect
+		}
+
+		err := reconnectFn(context.Background(), syncproto.ReconnectRequest{
 			Reason:               reason,
 			MaxObservedTimestamp: observed,
 		})
@@ -1049,6 +1063,16 @@ func (c *Client) resolveMutationVisibilityLocked() {
 			delete(c.pending, id)
 		}
 	}
+}
+
+func (c *Client) maxObservedTimestampLocked() uint64 {
+	maxObserved := c.state.ObservedTimestamp()
+	for _, request := range c.pending {
+		if request.waitingOnTS && request.visibleTS > maxObserved {
+			maxObserved = request.visibleTS
+		}
+	}
+	return maxObserved
 }
 
 func decodeResultValue(raw json.RawMessage) (Value, error) {

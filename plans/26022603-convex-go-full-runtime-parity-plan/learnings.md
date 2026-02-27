@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 42 protocol-failure-reconnect-propagation
+- Context: Failure-triggered reconnects existed, but payload completeness across failure classes and max-observed derivation were not explicitly enforced.
+- Learning: Centralizing failure payload construction (`reason` + max of observed transition TS and mutation visibility TS) plus class-level propagation tests hardens reconnect correctness under protocol/transport errors.
+- Impact on next steps: Worker-routed public APIs can rely on reconnect intent being complete and test-verified regardless of failure origin.
+
 ## 2026-02-26 Step 41 communicate-during-send
 - Context: Outbound flush sends could stall worker progress if a send path blocked, risking starvation of inbound protocol processing.
 - Learning: Wrapping sends in `sendWhileCommunicating` and selecting over transport/command channels while awaiting send completion removes starvation without violating flush ordering.

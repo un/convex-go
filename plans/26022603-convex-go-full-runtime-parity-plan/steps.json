@@ -463,7 +463,7 @@
         "Reconnect payload is complete",
         "Propagation tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 43,
