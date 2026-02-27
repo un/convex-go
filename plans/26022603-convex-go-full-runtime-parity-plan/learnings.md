@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 46 auth-api-through-worker
+- Context: Auth APIs still mixed direct state mutation with out-of-band authenticate sends, which could diverge from worker ordering guarantees.
+- Learning: Worker-dispatched auth update commands (including callback registration) keep token state, identity versioning, and authenticate replay on one ordered path while preserving pre-connect fallback semantics.
+- Impact on next steps: Live integration expansion can now validate auth-refresh and reconnect behavior against the same worker runtime used by all public APIs.
+
 ## 2026-02-26 Step 45 watchall-clone-lifecycle
 - Context: `WatchAll` lifecycle was still partly direct-path and clone/close semantics needed explicit regression coverage under worker ownership.
 - Learning: Worker-routed watch registration/unregistration plus coherent multi-subscriber snapshot assertions catches lifecycle drift while preserving shared-runtime clone close idempotence.

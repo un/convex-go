@@ -523,6 +523,82 @@ func TestCloneCloseLifecycleNoPanic(t *testing.T) {
 	client.Close()
 }
 
+func TestSetAuthThroughWorkerEnqueuesAuthenticate(t *testing.T) {
+	client := newClient()
+	sent := make(chan protocol.ClientMessage, 2)
+
+	client.mu.Lock()
+	client.connected = true
+	client.workerStarted = true
+	client.sendFn = func(_ context.Context, message protocol.ClientMessage) error {
+		sent <- message
+		return nil
+	}
+	client.mu.Unlock()
+
+	go client.workerLoop()
+
+	token := "worker-token"
+	client.SetAuth(&token)
+
+	select {
+	case message := <-sent:
+		if message.Type != "Authenticate" {
+			t.Fatalf("expected authenticate message, got %s", message.Type)
+		}
+		if userToken, ok := message.Token.User(); !ok || userToken != token {
+			t.Fatalf("expected user auth token %q, got %#v", token, message.Token)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for authenticate message")
+	}
+
+	client.Close()
+}
+
+func TestSetAuthCallbackThroughWorkerEnqueuesAuthenticate(t *testing.T) {
+	client := newClient()
+	sent := make(chan protocol.ClientMessage, 2)
+	var calls []bool
+
+	client.mu.Lock()
+	client.connected = true
+	client.workerStarted = true
+	client.sendFn = func(_ context.Context, message protocol.ClientMessage) error {
+		sent <- message
+		return nil
+	}
+	client.mu.Unlock()
+
+	go client.workerLoop()
+
+	err := client.SetAuthCallback(func(forceRefresh bool) (*string, error) {
+		calls = append(calls, forceRefresh)
+		token := "callback-token"
+		return &token, nil
+	})
+	if err != nil {
+		t.Fatalf("set auth callback failed: %v", err)
+	}
+	if len(calls) != 1 || calls[0] {
+		t.Fatalf("expected immediate callback invocation with forceRefresh=false, got %v", calls)
+	}
+
+	select {
+	case message := <-sent:
+		if message.Type != "Authenticate" {
+			t.Fatalf("expected authenticate message, got %s", message.Type)
+		}
+		if userToken, ok := message.Token.User(); !ok || userToken != "callback-token" {
+			t.Fatalf("expected callback user token, got %#v", message.Token)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for authenticate message")
+	}
+
+	client.Close()
+}
+
 func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	t.Helper()
 	select {

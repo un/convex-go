@@ -206,10 +206,17 @@ func (c *Client) WatchAll() *QuerySetSubscription {
 
 func (c *Client) SetAuth(token *string) {
 	c.mu.Lock()
-	c.setAuthTokenLocked(token)
+	workerReady := c.workerStarted && !c.closed
+	if !workerReady {
+		c.setAuthTokenLocked(token)
+		c.mu.Unlock()
+		return
+	}
 	c.mu.Unlock()
 
-	_ = c.sendAuthenticate(context.Background(), token)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, _ = c.executeWorkerCommand(ctx, workerCommandSetAuth, workerSetAuthPayload{token: token})
 }
 
 func (c *Client) SetAuthCallback(fetcher AuthTokenFetcher) error {
@@ -217,16 +224,25 @@ func (c *Client) SetAuthCallback(fetcher AuthTokenFetcher) error {
 		return fmt.Errorf("auth callback is required")
 	}
 
-	c.mu.Lock()
-	c.authFetcher = fetcher
-	c.mu.Unlock()
-
 	token, err := fetcher(false)
 	if err != nil {
 		return err
 	}
-	c.SetAuth(token)
-	return nil
+
+	c.mu.Lock()
+	workerReady := c.workerStarted && !c.closed
+	if !workerReady {
+		c.authFetcher = fetcher
+		c.setAuthTokenLocked(token)
+		c.mu.Unlock()
+		return nil
+	}
+	c.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err = c.executeWorkerCommand(ctx, workerCommandSetAuthCB, workerSetAuthCallbackPayload{fetcher: fetcher, token: token})
+	return err
 }
 
 func (c *Client) Close() {
@@ -488,6 +504,10 @@ func (c *Client) handleWorkerCommand(cmd workerCommand) {
 		c.handleWorkerWatchAll(cmd)
 	case workerCommandUnwatch:
 		c.handleWorkerUnwatch(cmd)
+	case workerCommandSetAuth:
+		c.handleWorkerSetAuth(cmd)
+	case workerCommandSetAuthCB:
+		c.handleWorkerSetAuthCallback(cmd)
 	case workerCommandClose:
 		cmd.resolve(nil, nil)
 	default:
@@ -619,6 +639,55 @@ func (c *Client) handleWorkerUnwatch(cmd workerCommand) {
 		delete(c.watchers, payload.watcherID)
 	}
 	c.mu.Unlock()
+
+	cmd.resolve(nil, nil)
+}
+
+func (c *Client) handleWorkerSetAuth(cmd workerCommand) {
+	payload, ok := cmd.value.(workerSetAuthPayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid set auth payload"))
+		return
+	}
+
+	c.mu.Lock()
+	c.setAuthTokenLocked(payload.token)
+	connected := c.connected
+	c.mu.Unlock()
+
+	if connected {
+		message, err := c.buildAuthenticateMessage(payload.token)
+		if err != nil {
+			cmd.resolve(nil, err)
+			return
+		}
+		c.enqueueOutbound(message)
+	}
+
+	cmd.resolve(nil, nil)
+}
+
+func (c *Client) handleWorkerSetAuthCallback(cmd workerCommand) {
+	payload, ok := cmd.value.(workerSetAuthCallbackPayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid set auth callback payload"))
+		return
+	}
+
+	c.mu.Lock()
+	c.authFetcher = payload.fetcher
+	c.setAuthTokenLocked(payload.token)
+	connected := c.connected
+	c.mu.Unlock()
+
+	if connected {
+		message, err := c.buildAuthenticateMessage(payload.token)
+		if err != nil {
+			cmd.resolve(nil, err)
+			return
+		}
+		c.enqueueOutbound(message)
+	}
 
 	cmd.resolve(nil, nil)
 }

@@ -507,7 +507,7 @@
         "Reconnect auth replay works",
         "Auth integration tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 47,

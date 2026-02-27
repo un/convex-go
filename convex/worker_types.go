@@ -67,6 +67,15 @@ type workerUnwatchPayload struct {
 	watcherID int64
 }
 
+type workerSetAuthPayload struct {
+	token *string
+}
+
+type workerSetAuthCallbackPayload struct {
+	fetcher AuthTokenFetcher
+	token   *string
+}
+
 type workerCommandResult struct {
 	value any
 	err   error
