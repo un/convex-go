@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 37 replay-queue-rebuild
+- Context: Reconnect replay used map iteration, so in-flight request replay order was non-deterministic and harder to validate.
+- Learning: Rebuilding replay payloads from canonical sorted IDs (auth -> sorted query set -> sorted pending requests) gives deterministic reconnect behavior and blocks stale ordering regressions.
+- Impact on next steps: Worker command/event modeling can assume stable replay ordering invariants during reconnect recovery.
+
 ## 2026-02-26 Step 36 auth-callback-refresh-semantics
 - Context: Reconnect auth refresh calls existed, but callback failure handling and refresh-side auth sends could produce ambiguous behavior.
 - Learning: Treating force-refresh callback failures as reconnect retry conditions and applying refreshed tokens without pre-reconnect sends makes auth replay deterministic.

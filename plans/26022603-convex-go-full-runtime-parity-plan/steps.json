@@ -408,7 +408,7 @@
         "Replay order is deterministic",
         "Stale base-version replay is prevented"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 38,

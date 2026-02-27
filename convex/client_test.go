@@ -303,6 +303,45 @@ func TestSetAuthCallbackReconnectForceRefreshAndRetry(t *testing.T) {
 	}
 }
 
+func TestReconnectReplayOrderAuthQueriesThenPendingRequests(t *testing.T) {
+	server := newReplayOrderServer(t)
+	defer server.Close()
+
+	client := NewClientBuilder().WithDeploymentURL(server.URL).Build()
+	defer client.Close()
+
+	token := "auth-token"
+	client.SetAuth(&token)
+
+	sub, err := client.Subscribe(context.Background(), "test:query", map[string]any{"x": 1})
+	if err != nil {
+		t.Fatalf("subscribe failed: %v", err)
+	}
+	defer sub.Close()
+	select {
+	case <-sub.Updates():
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for initial subscription value")
+	}
+
+	mutationCtx, cancelMutation := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelMutation()
+	if _, err := client.Mutation(mutationCtx, "test:mutation", map[string]any{"x": 1}); err != nil {
+		t.Fatalf("mutation failed: %v (second connection replay: %v)", err, server.secondConnectionReplay())
+	}
+
+	replayed := server.secondConnectionReplay()
+	if len(replayed) < 3 {
+		t.Fatalf("expected replayed messages on second connection, got %v", replayed)
+	}
+	expected := []string{"Authenticate", "ModifyQuerySet", "Mutation"}
+	for i, want := range expected {
+		if replayed[i] != want {
+			t.Fatalf("unexpected replay order at %d: got %s want %s (full: %v)", i, replayed[i], want, replayed)
+		}
+	}
+}
+
 func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	t.Helper()
 	select {
@@ -541,6 +580,148 @@ func newChunkedTransitionServer(t *testing.T, outOfOrderFirstConnection bool) *h
 			}
 		}
 	}))
+}
+
+type replayOrderServer struct {
+	*httptest.Server
+	mu                 sync.Mutex
+	secondConnMessages []string
+}
+
+func newReplayOrderServer(t *testing.T) *replayOrderServer {
+	t.Helper()
+
+	upgrader := websocket.Upgrader{}
+	srv := &replayOrderServer{}
+	var mu sync.Mutex
+	connections := 0
+
+	srv.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/sync" {
+			http.NotFound(w, r)
+			return
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		mu.Lock()
+		connections++
+		connectionIndex := connections
+		mu.Unlock()
+
+		var (
+			lastQueryID protocol.QueryID
+			hasQuery    bool
+		)
+
+		for {
+			_, data, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+
+			message, err := protocol.DecodeClientMessage(data)
+			if err != nil {
+				continue
+			}
+
+			if connectionIndex == 2 && message.Type != "Connect" {
+				srv.mu.Lock()
+				srv.secondConnMessages = append(srv.secondConnMessages, message.Type)
+				srv.mu.Unlock()
+			}
+
+			switch message.Type {
+			case "ModifyQuerySet":
+				for _, mod := range message.Modifications {
+					query, ok := mod.Query()
+					if !ok {
+						continue
+					}
+					lastQueryID = query.QueryID
+					hasQuery = true
+					payload, err := json.Marshal(NewValue(map[string]any{"source": "server", "query": query.UDFPath}))
+					if err != nil {
+						t.Fatalf("marshal failed: %v", err)
+					}
+					transition := protocol.ServerMessage{
+						Type:         "Transition",
+						StartVersion: &protocol.StateVersion{QuerySet: 0, Identity: 0, TS: protocol.NewTimestamp(0)},
+						EndVersion:   &protocol.StateVersion{QuerySet: 1, Identity: 0, TS: protocol.NewTimestamp(1)},
+						Modifications: []protocol.StateModification{
+							protocol.NewStateModificationQueryUpdated(query.QueryID, payload, nil),
+						},
+					}
+					encoded, err := protocol.EncodeServerMessage(transition)
+					if err != nil {
+						t.Fatalf("encode failed: %v", err)
+					}
+					if err := conn.WriteMessage(websocket.TextMessage, encoded); err != nil {
+						return
+					}
+				}
+			case "Mutation":
+				if connectionIndex == 1 {
+					_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "force reconnect"), time.Now().Add(time.Second))
+					return
+				}
+
+				success := true
+				result, err := json.Marshal(NewValue(map[string]any{"ok": true}))
+				if err != nil {
+					t.Fatalf("marshal failed: %v", err)
+				}
+				response := protocol.ServerMessage{
+					Type:      "MutationResponse",
+					RequestID: message.RequestID,
+					Success:   &success,
+					Result:    result,
+					TS:        protocol.EncodeTimestamp(2),
+				}
+				responseBytes, err := protocol.EncodeServerMessage(response)
+				if err != nil {
+					t.Fatalf("encode failed: %v", err)
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, responseBytes); err != nil {
+					return
+				}
+				transition := protocol.ServerMessage{
+					Type:          "Transition",
+					StartVersion:  &protocol.StateVersion{QuerySet: 1, Identity: 0, TS: protocol.NewTimestamp(1)},
+					EndVersion:    &protocol.StateVersion{QuerySet: 1, Identity: 0, TS: protocol.NewTimestamp(2)},
+					Modifications: []protocol.StateModification{},
+				}
+				if hasQuery {
+					payload, err := json.Marshal(NewValue(map[string]any{"source": "server", "query": "test:query"}))
+					if err != nil {
+						t.Fatalf("marshal failed: %v", err)
+					}
+					transition.Modifications = append(transition.Modifications, protocol.NewStateModificationQueryUpdated(lastQueryID, payload, nil))
+				}
+				transitionBytes, err := protocol.EncodeServerMessage(transition)
+				if err != nil {
+					t.Fatalf("encode failed: %v", err)
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, transitionBytes); err != nil {
+					return
+				}
+			}
+		}
+	}))
+
+	return srv
+}
+
+func (s *replayOrderServer) secondConnectionReplay() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]string, len(s.secondConnMessages))
+	copy(out, s.secondConnMessages)
+	return out
 }
 
 func encodeTransitionForQuery(queryID protocol.QueryID, path string) (string, error) {

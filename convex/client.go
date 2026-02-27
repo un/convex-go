@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -706,8 +707,22 @@ func (c *Client) replayState() error {
 	for id, query := range c.queries {
 		queries[id] = query
 	}
-	pending := make([]protocol.ClientMessage, 0, len(c.pending))
-	for _, request := range c.pending {
+	pendingIDs := make([]protocol.RequestSequenceNumber, 0, len(c.pending))
+	for requestID := range c.pending {
+		pendingIDs = append(pendingIDs, requestID)
+	}
+	c.mu.Unlock()
+
+	sort.Slice(pendingIDs, func(i, j int) bool {
+		return pendingIDs[i] < pendingIDs[j]
+	})
+	pending := make([]protocol.ClientMessage, 0, len(pendingIDs))
+	c.mu.Lock()
+	for _, requestID := range pendingIDs {
+		request, ok := c.pending[requestID]
+		if !ok {
+			continue
+		}
 		pending = append(pending, request.message)
 	}
 	c.mu.Unlock()
@@ -726,8 +741,15 @@ func (c *Client) replayState() error {
 			BaseVersion: 0,
 			NewVersion:  newVersion.Uint32(),
 		}
+		queryIDs := make([]uint64, 0, len(queries))
+		for queryID := range queries {
+			queryIDs = append(queryIDs, queryID)
+		}
+		sort.Slice(queryIDs, func(i, j int) bool { return queryIDs[i] < queryIDs[j] })
+
 		msg.Modifications = make([]protocol.QuerySetModification, 0, len(queries))
-		for queryID, query := range queries {
+		for _, queryID := range queryIDs {
+			query := queries[queryID]
 			args, err := marshalWireValue(query.args)
 			if err != nil {
 				return err
