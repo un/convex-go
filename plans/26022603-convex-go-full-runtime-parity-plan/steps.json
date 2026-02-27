@@ -496,7 +496,7 @@
         "Clone shares underlying runtime",
         "Shutdown avoids leaks/panics"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 46,

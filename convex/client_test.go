@@ -456,6 +456,73 @@ func TestMutationContextCancellationRemovesPendingRequest(t *testing.T) {
 	}
 }
 
+func TestWatchAllSnapshotCoherentAcrossSubscriptions(t *testing.T) {
+	server := newSyncTestServer(t)
+	defer server.Close()
+
+	client := NewClientBuilder().WithDeploymentURL(server.URL).Build()
+	defer client.Close()
+
+	subA, err := client.Subscribe(context.Background(), "test:query", map[string]any{"x": 1})
+	if err != nil {
+		t.Fatalf("subscribe A failed: %v", err)
+	}
+	defer subA.Close()
+	subB, err := client.Subscribe(context.Background(), "test:query", map[string]any{"x": 1})
+	if err != nil {
+		t.Fatalf("subscribe B failed: %v", err)
+	}
+	defer subB.Close()
+
+	select {
+	case <-subA.Updates():
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for subscription A update")
+	}
+	select {
+	case <-subB.Updates():
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for subscription B update")
+	}
+
+	watch := client.WatchAll()
+	defer watch.Close()
+
+	select {
+	case snapshot := <-watch.Updates():
+		if len(snapshot) != 2 {
+			t.Fatalf("expected coherent snapshot with 2 subscribers, got %d (%v)", len(snapshot), snapshot)
+		}
+		for subID, value := range snapshot {
+			raw, ok := value.Raw().(map[string]any)
+			if !ok {
+				t.Fatalf("subscriber %d expected object value, got %T", subID, value.Raw())
+			}
+			if raw["source"] != "server" {
+				t.Fatalf("subscriber %d expected server source, got %#v", subID, raw)
+			}
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timed out waiting for coherent watch_all snapshot")
+	}
+}
+
+func TestCloneCloseLifecycleNoPanic(t *testing.T) {
+	server := newSyncTestServer(t)
+	defer server.Close()
+
+	client := NewClientBuilder().WithDeploymentURL(server.URL).Build()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if _, err := client.Query(ctx, "test:query", map[string]any{}); err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	clone := client.Clone()
+	clone.Close()
+	client.Close()
+}
+
 func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	t.Helper()
 	select {

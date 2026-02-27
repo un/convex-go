@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 45 watchall-clone-lifecycle
+- Context: `WatchAll` lifecycle was still partly direct-path and clone/close semantics needed explicit regression coverage under worker ownership.
+- Learning: Worker-routed watch registration/unregistration plus coherent multi-subscriber snapshot assertions catches lifecycle drift while preserving shared-runtime clone close idempotence.
+- Impact on next steps: Auth API routing can reuse the same worker command lifecycle pattern with confidence around close behavior.
+
 ## 2026-02-26 Step 44 mutation-action-through-worker
 - Context: Mutation/action request lifecycle was still initiated directly from API methods, outside worker command ownership.
 - Learning: Creating pending requests via worker commands and returning typed request handles keeps enqueue, cancellation, and response completion on one deterministic control path.

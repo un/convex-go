@@ -156,23 +156,50 @@ func (c *Client) Action(ctx context.Context, name string, args map[string]any) (
 
 func (c *Client) WatchAll() *QuerySetSubscription {
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	workerReady := c.workerStarted && !c.closed
+	c.mu.Unlock()
+	if !workerReady {
+		c.mu.Lock()
+		defer c.mu.Unlock()
 
-	c.nextWatcherID++
-	watcherID := c.nextWatcherID
-	updates := make(chan map[int64]Value, 8)
-	updates <- c.snapshotLocked()
-	c.watchers[watcherID] = updates
+		c.nextWatcherID++
+		watcherID := c.nextWatcherID
+		updates := make(chan map[int64]Value, 8)
+		updates <- c.snapshotLocked()
+		c.watchers[watcherID] = updates
+
+		return &QuerySetSubscription{
+			UpdatesCh: updates,
+			closeFn: func() {
+				c.mu.Lock()
+				defer c.mu.Unlock()
+				if ch, ok := c.watchers[watcherID]; ok {
+					close(ch)
+					delete(c.watchers, watcherID)
+				}
+			},
+		}
+	}
+
+	resultAny, err := c.executeWorkerCommand(context.Background(), workerCommandWatchAll, nil)
+	if err != nil {
+		updates := make(chan map[int64]Value)
+		close(updates)
+		return &QuerySetSubscription{UpdatesCh: updates, closeFn: func() {}}
+	}
+	watchResult, ok := resultAny.(workerWatchAllResult)
+	if !ok {
+		updates := make(chan map[int64]Value)
+		close(updates)
+		return &QuerySetSubscription{UpdatesCh: updates, closeFn: func() {}}
+	}
 
 	return &QuerySetSubscription{
-		UpdatesCh: updates,
+		UpdatesCh: watchResult.updates,
 		closeFn: func() {
-			c.mu.Lock()
-			defer c.mu.Unlock()
-			if ch, ok := c.watchers[watcherID]; ok {
-				close(ch)
-				delete(c.watchers, watcherID)
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			_, _ = c.executeWorkerCommand(ctx, workerCommandUnwatch, workerUnwatchPayload{watcherID: watchResult.watcherID})
 		},
 	}
 }
@@ -457,6 +484,10 @@ func (c *Client) handleWorkerCommand(cmd workerCommand) {
 		c.handleWorkerRunRequest(cmd, "action")
 	case workerCommandCancelReq:
 		c.handleWorkerCancelRequest(cmd)
+	case workerCommandWatchAll:
+		c.handleWorkerWatchAll(cmd)
+	case workerCommandUnwatch:
+		c.handleWorkerUnwatch(cmd)
 	case workerCommandClose:
 		cmd.resolve(nil, nil)
 	default:
@@ -557,6 +588,35 @@ func (c *Client) handleWorkerCancelRequest(cmd workerCommand) {
 		pending.response <- Failure(payload.err)
 		close(pending.response)
 		delete(c.pending, payload.requestID)
+	}
+	c.mu.Unlock()
+
+	cmd.resolve(nil, nil)
+}
+
+func (c *Client) handleWorkerWatchAll(cmd workerCommand) {
+	c.mu.Lock()
+	c.nextWatcherID++
+	watcherID := c.nextWatcherID
+	updates := make(chan map[int64]Value, 8)
+	updates <- c.snapshotLocked()
+	c.watchers[watcherID] = updates
+	c.mu.Unlock()
+
+	cmd.resolve(workerWatchAllResult{watcherID: watcherID, updates: updates}, nil)
+}
+
+func (c *Client) handleWorkerUnwatch(cmd workerCommand) {
+	payload, ok := cmd.value.(workerUnwatchPayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid unwatch payload"))
+		return
+	}
+
+	c.mu.Lock()
+	if ch, ok := c.watchers[payload.watcherID]; ok {
+		close(ch)
+		delete(c.watchers, payload.watcherID)
 	}
 	c.mu.Unlock()
 

@@ -18,6 +18,7 @@ const (
 	workerCommandSetAuth     workerCommandKind = "set_auth"
 	workerCommandSetAuthCB   workerCommandKind = "set_auth_callback"
 	workerCommandWatchAll    workerCommandKind = "watch_all"
+	workerCommandUnwatch     workerCommandKind = "unwatch"
 	workerCommandClose       workerCommandKind = "close"
 )
 
@@ -55,6 +56,15 @@ type workerRunRequestResult struct {
 type workerCancelRequestPayload struct {
 	requestID protocol.RequestSequenceNumber
 	err       error
+}
+
+type workerWatchAllResult struct {
+	watcherID int64
+	updates   chan map[int64]Value
+}
+
+type workerUnwatchPayload struct {
+	watcherID int64
 }
 
 type workerCommandResult struct {
