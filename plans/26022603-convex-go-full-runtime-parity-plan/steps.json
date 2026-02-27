@@ -419,7 +419,7 @@
         "Event routing is type-safe",
         "Cancellation semantics are defined"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 39,

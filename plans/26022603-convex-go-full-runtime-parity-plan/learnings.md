@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 38 worker-command-event-model
+- Context: Runtime operations were coordinated by ad-hoc goroutines and direct method calls, which made ownership boundaries implicit.
+- Learning: Explicit typed worker commands/events (API command, transport message/error/done) make cancellation and routing semantics unambiguous before loop refactors.
+- Impact on next steps: Worker main loop implementation can consume one normalized event shape instead of branching on mixed channel payload conventions.
+
 ## 2026-02-26 Step 37 replay-queue-rebuild
 - Context: Reconnect replay used map iteration, so in-flight request replay order was non-deterministic and harder to validate.
 - Learning: Rebuilding replay payloads from canonical sorted IDs (auth -> sorted query set -> sorted pending requests) gives deterministic reconnect behavior and blocks stale ordering regressions.
