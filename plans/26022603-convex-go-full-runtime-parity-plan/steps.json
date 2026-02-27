@@ -452,7 +452,7 @@
         "Inbound events are not starved",
         "Regression tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 42,

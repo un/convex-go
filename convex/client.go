@@ -51,14 +51,15 @@ type Client struct {
 	lastState     WebSocketState
 	hasLastState  bool
 
-	manager        *syncproto.WebSocketManager
-	sendFn         func(context.Context, protocol.ClientMessage) error
-	responses      <-chan syncproto.ProtocolResponse
-	workerStarted  bool
-	workerCommands chan workerCommand
-	workerDone     chan struct{}
-	flushWake      chan struct{}
-	connected      bool
+	manager         *syncproto.WebSocketManager
+	sendFn          func(context.Context, protocol.ClientMessage) error
+	responses       <-chan syncproto.ProtocolResponse
+	workerStarted   bool
+	workerCommands  chan workerCommand
+	workerDone      chan struct{}
+	flushWake       chan struct{}
+	workerEventHook func(workerEvent)
+	connected       bool
 
 	state            *baseclient.LocalSyncState
 	querySubs        map[int64]chan Value
@@ -465,6 +466,13 @@ func (c *Client) handleWorkerCommand(cmd workerCommand) {
 }
 
 func (c *Client) handleWorkerEvent(event workerEvent) {
+	c.mu.Lock()
+	hook := c.workerEventHook
+	c.mu.Unlock()
+	if hook != nil {
+		hook(event)
+	}
+
 	switch event.kind {
 	case workerEventTransportErr:
 		c.onProtocolFailure(event.err)
@@ -506,11 +514,43 @@ func (c *Client) flushOutboundBeforeSelect() error {
 		c.outboundQueue = c.outboundQueue[1:]
 		c.mu.Unlock()
 
-		if err := c.send(context.Background(), message); err != nil {
+		if err := c.sendWhileCommunicating(message); err != nil {
 			c.mu.Lock()
 			c.outboundQueue = append([]protocol.ClientMessage{message}, c.outboundQueue...)
 			c.mu.Unlock()
 			return err
+		}
+	}
+}
+
+func (c *Client) sendWhileCommunicating(message protocol.ClientMessage) error {
+	done := make(chan error, 1)
+	go func() {
+		done <- c.send(context.Background(), message)
+	}()
+
+	for {
+		c.mu.Lock()
+		responses := c.responses
+		closed := c.closed
+		c.mu.Unlock()
+		if closed {
+			return fmt.Errorf("client closed")
+		}
+
+		select {
+		case err := <-done:
+			return err
+		case <-c.flushWake:
+		case cmd := <-c.workerCommands:
+			c.handleWorkerCommand(cmd)
+		case response, ok := <-responses:
+			if !ok {
+				closeErr := errors.New("websocket response stream closed")
+				c.handleWorkerEvent(workerEvent{kind: workerEventTransportDone, err: closeErr})
+				return closeErr
+			}
+			c.handleWorkerEvent(workerEventFromProtocolResponse(response))
 		}
 	}
 }

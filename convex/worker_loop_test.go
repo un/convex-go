@@ -84,3 +84,40 @@ func TestWorkerFlushesOutboundBeforeSelect(t *testing.T) {
 
 	client.Close()
 }
+
+func TestWorkerCommunicatesDuringSend(t *testing.T) {
+	client := newClient()
+	responses := make(chan syncproto.ProtocolResponse, 1)
+	releaseSend := make(chan struct{})
+	events := make(chan workerEventKind, 2)
+
+	client.mu.Lock()
+	client.responses = responses
+	client.connected = true
+	client.workerStarted = true
+	client.sendFn = func(_ context.Context, _ protocol.ClientMessage) error {
+		<-releaseSend
+		return nil
+	}
+	client.workerEventHook = func(event workerEvent) {
+		events <- event.kind
+	}
+	client.mu.Unlock()
+
+	go client.workerLoop()
+
+	client.enqueueOutbound(protocol.ClientMessage{Type: "Event", Event: []byte(`"blocking-send"`)})
+	responses <- syncproto.ProtocolResponse{Message: &protocol.ServerMessage{Type: "Ping"}}
+
+	select {
+	case kind := <-events:
+		if kind != workerEventTransportMsg {
+			t.Fatalf("unexpected worker event kind: %s", kind)
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatalf("expected worker to process transport event while send was blocked")
+	}
+
+	close(releaseSend)
+	client.Close()
+}

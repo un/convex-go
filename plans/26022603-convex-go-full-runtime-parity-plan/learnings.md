@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 41 communicate-during-send
+- Context: Outbound flush sends could stall worker progress if a send path blocked, risking starvation of inbound protocol processing.
+- Learning: Wrapping sends in `sendWhileCommunicating` and selecting over transport/command channels while awaiting send completion removes starvation without violating flush ordering.
+- Impact on next steps: Protocol failure propagation can now rely on inbound error visibility even when outbound traffic is under pressure.
+
 ## 2026-02-26 Step 40 flush-before-select
 - Context: Reconnect replay messages and command/event handling shared the worker loop but had no explicit pre-select flush invariant.
 - Learning: A dedicated outbound queue + wake signal with `flushOutboundBeforeSelect` guarantees replay/auth-critical payloads are emitted before normal event/command selection.
