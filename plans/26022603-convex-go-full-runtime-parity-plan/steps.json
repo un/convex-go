@@ -441,7 +441,7 @@
         "Replay behavior is stable",
         "Ordering tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 41,

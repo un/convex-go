@@ -52,10 +52,12 @@ type Client struct {
 	hasLastState  bool
 
 	manager        *syncproto.WebSocketManager
+	sendFn         func(context.Context, protocol.ClientMessage) error
 	responses      <-chan syncproto.ProtocolResponse
 	workerStarted  bool
 	workerCommands chan workerCommand
 	workerDone     chan struct{}
+	flushWake      chan struct{}
 	connected      bool
 
 	state            *baseclient.LocalSyncState
@@ -72,6 +74,8 @@ type Client struct {
 
 	authToken   *string
 	authFetcher AuthTokenFetcher
+
+	outboundQueue []protocol.ClientMessage
 }
 
 func newClient() *Client {
@@ -85,6 +89,7 @@ func newClient() *Client {
 		transitionChunks: map[string]*transitionChunkBuffer{},
 		workerCommands:   make(chan workerCommand, 64),
 		workerDone:       make(chan struct{}),
+		flushWake:        make(chan struct{}, 1),
 	}
 }
 
@@ -344,8 +349,12 @@ func (c *Client) ensureConnected(ctx context.Context) error {
 
 func (c *Client) send(ctx context.Context, message protocol.ClientMessage) error {
 	c.mu.Lock()
+	sendFn := c.sendFn
 	manager := c.manager
 	c.mu.Unlock()
+	if sendFn != nil {
+		return sendFn(ctx, message)
+	}
 	if manager == nil {
 		return fmt.Errorf("client not connected")
 	}
@@ -403,6 +412,11 @@ func (c *Client) workerLoop() {
 	defer close(c.workerDone)
 
 	for {
+		if err := c.flushOutboundBeforeSelect(); err != nil {
+			c.onProtocolFailure(fmt.Errorf("flush outbound failed: %w", err))
+			continue
+		}
+
 		c.mu.Lock()
 		if c.closed {
 			c.mu.Unlock()
@@ -411,11 +425,18 @@ func (c *Client) workerLoop() {
 		responses := c.responses
 		c.mu.Unlock()
 		if responses == nil {
-			time.Sleep(10 * time.Millisecond)
+			select {
+			case <-c.flushWake:
+			case cmd := <-c.workerCommands:
+				c.handleWorkerCommand(cmd)
+			case <-time.After(10 * time.Millisecond):
+			}
 			continue
 		}
 
 		select {
+		case <-c.flushWake:
+			continue
 		case cmd := <-c.workerCommands:
 			c.handleWorkerCommand(cmd)
 		case response, ok := <-responses:
@@ -453,6 +474,44 @@ func (c *Client) handleWorkerEvent(event workerEvent) {
 		}
 	case workerEventTransportDone:
 		c.onProtocolFailure(errors.New("websocket response stream closed"))
+	}
+}
+
+func (c *Client) enqueueOutbound(message protocol.ClientMessage) {
+	c.mu.Lock()
+	c.outboundQueue = append(c.outboundQueue, message)
+	c.mu.Unlock()
+	select {
+	case c.flushWake <- struct{}{}:
+	default:
+	}
+}
+
+func (c *Client) flushOutboundBeforeSelect() error {
+	for {
+		c.mu.Lock()
+		if c.closed {
+			c.mu.Unlock()
+			return nil
+		}
+		if len(c.outboundQueue) == 0 {
+			c.mu.Unlock()
+			return nil
+		}
+		if !c.connected {
+			c.mu.Unlock()
+			return nil
+		}
+		message := c.outboundQueue[0]
+		c.outboundQueue = c.outboundQueue[1:]
+		c.mu.Unlock()
+
+		if err := c.send(context.Background(), message); err != nil {
+			c.mu.Lock()
+			c.outboundQueue = append([]protocol.ClientMessage{message}, c.outboundQueue...)
+			c.mu.Unlock()
+			return err
+		}
 	}
 }
 
@@ -774,9 +833,11 @@ func (c *Client) replayState() error {
 	}
 	c.mu.Unlock()
 
-	if err := c.sendAuthenticate(context.Background(), authToken); err != nil {
+	authMessage, err := c.buildAuthenticateMessage(authToken)
+	if err != nil {
 		return err
 	}
+	c.enqueueOutbound(authMessage)
 
 	if len(queries) > 0 {
 		newVersion, err := protocol.QuerySetVersionFromUint64(c.state.QuerySetVersion())
@@ -811,15 +872,11 @@ func (c *Client) replayState() error {
 				Args:    args,
 			}))
 		}
-		if err := c.send(context.Background(), msg); err != nil {
-			return err
-		}
+		c.enqueueOutbound(msg)
 	}
 
 	for _, message := range pending {
-		if err := c.send(context.Background(), message); err != nil {
-			return err
-		}
+		c.enqueueOutbound(message)
 	}
 
 	return nil
@@ -878,11 +935,19 @@ func (c *Client) buildModifyRemoveMessage(queryID uint64) (protocol.ClientMessag
 }
 
 func (c *Client) sendAuthenticate(ctx context.Context, token *string) error {
+	message, err := c.buildAuthenticateMessage(token)
+	if err != nil {
+		return err
+	}
+	return c.send(ctx, message)
+}
+
+func (c *Client) buildAuthenticateMessage(token *string) (protocol.ClientMessage, error) {
 	c.mu.Lock()
 	version, err := protocol.IdentityVersionFromUint64(c.state.IdentityVersion())
 	c.mu.Unlock()
 	if err != nil {
-		return err
+		return protocol.ClientMessage{}, err
 	}
 
 	message := protocol.ClientMessage{Type: "Authenticate", BaseVersion: version.Uint32()}
@@ -891,7 +956,7 @@ func (c *Client) sendAuthenticate(ctx context.Context, token *string) error {
 	} else {
 		message.Token = protocol.NewUserAuthenticationToken(*token)
 	}
-	return c.send(ctx, message)
+	return message, nil
 }
 
 func (c *Client) snapshotForSubscriberLocked(subID int64) (Value, bool) {

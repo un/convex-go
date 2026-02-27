@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 40 flush-before-select
+- Context: Reconnect replay messages and command/event handling shared the worker loop but had no explicit pre-select flush invariant.
+- Learning: A dedicated outbound queue + wake signal with `flushOutboundBeforeSelect` guarantees replay/auth-critical payloads are emitted before normal event/command selection.
+- Impact on next steps: Communicate-during-send can now be layered onto a single outbound send path without losing replay priority semantics.
+
 ## 2026-02-26 Step 39 worker-main-loop
 - Context: Transport reads were handled by a dedicated listener goroutine, while worker command routing was not yet connected.
 - Learning: Replacing listener reads with a worker event loop (command + transport select) establishes a single control point for runtime transitions and clean shutdown.
