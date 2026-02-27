@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 47 expand-live-integration-suite
+- Context: Live coverage existed but bundled multiple flows into one linear test, with limited control for reconnect/auth-refresh validation.
+- Learning: Scenario-based live subtests with explicit env-gated probes make reconnect/auth-refresh checks configurable without weakening default CI behavior.
+- Impact on next steps: Final scaffold-zero and parity gates can reference a structured live suite with optional strict reconnect/auth expectations.
+
 ## 2026-02-26 Step 46 auth-api-through-worker
 - Context: Auth APIs still mixed direct state mutation with out-of-band authenticate sends, which could diverge from worker ordering guarantees.
 - Learning: Worker-dispatched auth update commands (including callback registration) keep token state, identity versioning, and authenticate replay on one ordered path while preserving pre-connect fallback semantics.

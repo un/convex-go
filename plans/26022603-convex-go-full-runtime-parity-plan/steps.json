@@ -518,7 +518,7 @@
         "Reconnect scenario is validated",
         "Auth-refresh scenario is validated"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 48,
