@@ -1,4 +1,2 @@
 # Temporary explicit scaffold allowlist entries.
 # Remove entries as runtime parity implementation closes them.
-
-convex/client.go:409:

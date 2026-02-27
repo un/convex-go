@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 35 transition-chunk-assembly
+- Context: `TransitionChunk` frames were treated as unsupported, which forced reconnect instead of applying valid chunked transitions.
+- Learning: Enforcing strict per-transition chunk ordering (`partNumber` sequence), deterministic assembly, and decode-as-Transition checks gives safe chunk support without silent state corruption.
+- Impact on next steps: Auth refresh/replay rebuild can assume both direct transitions and chunked transitions converge through the same validated apply path.
+
 ## 2026-02-26 Step 34 strict-transition-apply
 - Context: Transition application accepted any start version, risking silent state divergence.
 - Learning: Enforcing start/end version requirements and mismatch-triggered reconnect is essential to keep client/server state synchronized.

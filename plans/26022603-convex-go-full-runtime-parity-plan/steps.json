@@ -386,7 +386,7 @@
         "Out-of-order/invalid chunks fail cleanly",
         "Assembled transition path is tested"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 36,

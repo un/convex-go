@@ -168,6 +168,69 @@ func TestTransitionVersionMismatchTriggersReconnect(t *testing.T) {
 	}
 }
 
+func TestTransitionChunkAssemblyAppliesTransition(t *testing.T) {
+	server := newChunkedTransitionServer(t, false)
+	defer server.Close()
+
+	client := NewClientBuilder().WithDeploymentURL(server.URL).Build()
+	defer client.Close()
+
+	result, err := client.Query(context.Background(), "test:query", map[string]any{"x": int64(1)})
+	if err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+	value, err := result.Unwrap()
+	if err != nil {
+		t.Fatalf("unwrap failed: %v", err)
+	}
+
+	raw, ok := value.Raw().(map[string]any)
+	if !ok {
+		t.Fatalf("expected object result, got %T", value.Raw())
+	}
+	if raw["source"] != "server" {
+		t.Fatalf("expected server-sourced value, got %#v", raw)
+	}
+
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	if len(client.transitionChunks) != 0 {
+		t.Fatalf("expected transition chunk buffers to be cleared, got %d", len(client.transitionChunks))
+	}
+}
+
+func TestTransitionChunkOutOfOrderTriggersReconnect(t *testing.T) {
+	server := newChunkedTransitionServer(t, true)
+	defer server.Close()
+
+	states := make(chan WebSocketState, 16)
+	client := NewClientBuilder().
+		WithDeploymentURL(server.URL).
+		WithWebSocketStateCallback(func(state WebSocketState) {
+			states <- state
+		}).
+		Build()
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := client.Query(ctx, "test:query", map[string]any{"x": 1}); err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case state := <-states:
+			if state == WebSocketStateReconnecting {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("expected reconnecting state after out-of-order transition chunk")
+		}
+	}
+}
+
 func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	t.Helper()
 	select {
@@ -330,6 +393,131 @@ func newMismatchedTransitionServer(t *testing.T) *httptest.Server {
 			}
 		}
 	}))
+}
+
+func newChunkedTransitionServer(t *testing.T, outOfOrderFirstConnection bool) *httptest.Server {
+	t.Helper()
+
+	upgrader := websocket.Upgrader{}
+	var mu sync.Mutex
+	connections := 0
+
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/sync" {
+			http.NotFound(w, r)
+			return
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		mu.Lock()
+		connections++
+		connectionIndex := connections
+		mu.Unlock()
+
+		for {
+			_, data, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+
+			message, err := protocol.DecodeClientMessage(data)
+			if err != nil || message.Type != "ModifyQuerySet" {
+				continue
+			}
+
+			for _, mod := range message.Modifications {
+				query, ok := mod.Query()
+				if !ok {
+					continue
+				}
+
+				encodedTransition, err := encodeTransitionForQuery(query.QueryID, query.UDFPath)
+				if err != nil {
+					t.Fatalf("encode transition failed: %v", err)
+				}
+				chunks := splitChunks(encodedTransition, 3)
+				if len(chunks) != 3 {
+					t.Fatalf("expected 3 chunks, got %d", len(chunks))
+				}
+
+				order := []uint32{0, 1, 2}
+				if outOfOrderFirstConnection && connectionIndex == 1 {
+					order = []uint32{1, 0, 2}
+				}
+
+				for _, part := range order {
+					chunkMessage := protocol.ServerMessage{
+						Type:         "TransitionChunk",
+						Chunk:        chunks[part],
+						PartNumber:   part,
+						TotalParts:   uint32(len(chunks)),
+						TransitionID: "transition-1",
+					}
+					payload, err := protocol.EncodeServerMessage(chunkMessage)
+					if err != nil {
+						t.Fatalf("encode chunk failed: %v", err)
+					}
+					if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+						return
+					}
+				}
+			}
+		}
+	}))
+}
+
+func encodeTransitionForQuery(queryID protocol.QueryID, path string) (string, error) {
+	payload, err := json.Marshal(NewValue(map[string]any{"source": "server", "query": path}))
+	if err != nil {
+		return "", err
+	}
+	transition := protocol.ServerMessage{
+		Type: "Transition",
+		StartVersion: &protocol.StateVersion{
+			QuerySet: 0,
+			Identity: 0,
+			TS:       protocol.NewTimestamp(0),
+		},
+		EndVersion: &protocol.StateVersion{
+			QuerySet: 1,
+			Identity: 0,
+			TS:       protocol.NewTimestamp(1),
+		},
+		Modifications: []protocol.StateModification{
+			protocol.NewStateModificationQueryUpdated(queryID, payload, nil),
+		},
+	}
+	encoded, err := protocol.EncodeServerMessage(transition)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
+}
+
+func splitChunks(payload string, parts int) []string {
+	if parts <= 1 || len(payload) == 0 {
+		return []string{payload}
+	}
+
+	step := len(payload) / parts
+	if step == 0 {
+		return []string{payload}
+	}
+
+	chunks := make([]string, 0, parts)
+	start := 0
+	for i := 0; i < parts-1; i++ {
+		end := start + step
+		chunks = append(chunks, payload[start:end])
+		start = end
+	}
+	chunks = append(chunks, payload[start:])
+	return chunks
 }
 
 func newSyncTestServer(t *testing.T) *httptest.Server {

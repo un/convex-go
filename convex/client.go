@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +32,12 @@ type pendingRequest struct {
 	resolvedValue Value
 }
 
+type transitionChunkBuffer struct {
+	totalParts uint32
+	nextPart   uint32
+	parts      map[uint32]string
+}
+
 type Client struct {
 	mu sync.Mutex
 
@@ -55,9 +62,10 @@ type Client struct {
 	watchers         map[int64]chan map[int64]Value
 	nextWatcherID    int64
 
-	nextRequestID  protocol.RequestSequenceNumber
-	pending        map[protocol.RequestSequenceNumber]*pendingRequest
-	lastTransition *protocol.StateVersion
+	nextRequestID    protocol.RequestSequenceNumber
+	pending          map[protocol.RequestSequenceNumber]*pendingRequest
+	lastTransition   *protocol.StateVersion
+	transitionChunks map[string]*transitionChunkBuffer
 
 	authToken   *string
 	authFetcher AuthTokenFetcher
@@ -71,6 +79,7 @@ func newClient() *Client {
 		queries:          map[uint64]queryRegistration{},
 		watchers:         map[int64]chan map[int64]Value{},
 		pending:          map[protocol.RequestSequenceNumber]*pendingRequest{},
+		transitionChunks: map[string]*transitionChunkBuffer{},
 	}
 }
 
@@ -411,10 +420,69 @@ func (c *Client) handleServerMessage(message protocol.ServerMessage) {
 	case "FatalError":
 		c.onProtocolFailure(fmt.Errorf("fatal error: %s", message.Error))
 	case "TransitionChunk":
-		c.onProtocolFailure(fmt.Errorf("transition chunk unsupported"))
+		c.handleTransitionChunk(message)
 	default:
 		c.onProtocolFailure(fmt.Errorf("unknown server message type: %s", message.Type))
 	}
+}
+
+func (c *Client) handleTransitionChunk(message protocol.ServerMessage) {
+	c.mu.Lock()
+	buffer, ok := c.transitionChunks[message.TransitionID]
+	if !ok {
+		buffer = &transitionChunkBuffer{
+			totalParts: message.TotalParts,
+			nextPart:   0,
+			parts:      make(map[uint32]string, message.TotalParts),
+		}
+		c.transitionChunks[message.TransitionID] = buffer
+	}
+	if buffer.totalParts != message.TotalParts {
+		c.mu.Unlock()
+		c.onProtocolFailure(fmt.Errorf("transition chunk totalParts mismatch for %q: got %d want %d", message.TransitionID, message.TotalParts, buffer.totalParts))
+		return
+	}
+	if message.PartNumber != buffer.nextPart {
+		c.mu.Unlock()
+		c.onProtocolFailure(fmt.Errorf("transition chunk out of order for %q: got part %d want %d", message.TransitionID, message.PartNumber, buffer.nextPart))
+		return
+	}
+	if _, exists := buffer.parts[message.PartNumber]; exists {
+		c.mu.Unlock()
+		c.onProtocolFailure(fmt.Errorf("transition chunk duplicate part %d for %q", message.PartNumber, message.TransitionID))
+		return
+	}
+
+	buffer.parts[message.PartNumber] = message.Chunk
+	buffer.nextPart++
+
+	if uint32(len(buffer.parts)) != buffer.totalParts {
+		c.mu.Unlock()
+		return
+	}
+
+	assembled := assembleTransitionChunks(buffer)
+	delete(c.transitionChunks, message.TransitionID)
+	c.mu.Unlock()
+
+	decoded, err := protocol.DecodeServerMessage([]byte(assembled))
+	if err != nil {
+		c.onProtocolFailure(fmt.Errorf("failed to decode assembled transition chunk %q: %w", message.TransitionID, err))
+		return
+	}
+	if decoded.Type != "Transition" {
+		c.onProtocolFailure(fmt.Errorf("assembled transition chunk %q decoded as %s", message.TransitionID, decoded.Type))
+		return
+	}
+	c.handleTransition(decoded)
+}
+
+func assembleTransitionChunks(buffer *transitionChunkBuffer) string {
+	var out strings.Builder
+	for i := uint32(0); i < buffer.totalParts; i++ {
+		out.WriteString(buffer.parts[i])
+	}
+	return out.String()
 }
 
 func (c *Client) handleTransition(message protocol.ServerMessage) {
@@ -574,6 +642,7 @@ func (c *Client) onProtocolFailure(err error) {
 	c.connected = false
 	c.reconnecting = true
 	c.lastTransition = nil
+	c.transitionChunks = map[string]*transitionChunkBuffer{}
 	observed := c.state.ObservedTimestamp()
 	c.mu.Unlock()
 
