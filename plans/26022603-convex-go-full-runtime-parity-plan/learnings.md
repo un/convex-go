@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 48 scaffold-zero-final-parity-gate
+- Context: Final parity signoff required proving no remaining runtime scaffolds and rerunning all critical validation gates.
+- Learning: Keeping scaffold inventory closure, guard execution, and multi-gate validation in one final audit step gives a single authoritative parity signoff artifact.
+- Impact on next steps: Future runtime changes can reuse the signoff checklist and guard workflow as a regression template.
+
 ## 2026-02-26 Step 47 expand-live-integration-suite
 - Context: Live coverage existed but bundled multiple flows into one linear test, with limited control for reconnect/auth-refresh validation.
 - Learning: Scenario-based live subtests with explicit env-gated probes make reconnect/auth-refresh checks configurable without weakening default CI behavior.

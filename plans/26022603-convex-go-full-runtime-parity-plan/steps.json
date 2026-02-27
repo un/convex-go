@@ -529,7 +529,7 @@
         "All validation gates pass",
         "Parity signoff report is produced"
       ],
-      "completed": false
+      "completed": true
     }
   ],
   "ordering_policy": "Execute steps strictly in listed order.",
