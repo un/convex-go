@@ -14,6 +14,7 @@ const (
 	workerCommandUnsubscribe workerCommandKind = "unsubscribe"
 	workerCommandMutation    workerCommandKind = "mutation"
 	workerCommandAction      workerCommandKind = "action"
+	workerCommandCancelReq   workerCommandKind = "cancel_request"
 	workerCommandSetAuth     workerCommandKind = "set_auth"
 	workerCommandSetAuthCB   workerCommandKind = "set_auth_callback"
 	workerCommandWatchAll    workerCommandKind = "watch_all"
@@ -39,6 +40,21 @@ type workerSubscribeResult struct {
 
 type workerUnsubscribePayload struct {
 	subID int64
+}
+
+type workerRunRequestPayload struct {
+	name string
+	args map[string]any
+}
+
+type workerRunRequestResult struct {
+	requestID protocol.RequestSequenceNumber
+	response  <-chan FunctionResult
+}
+
+type workerCancelRequestPayload struct {
+	requestID protocol.RequestSequenceNumber
+	err       error
 }
 
 type workerCommandResult struct {

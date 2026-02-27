@@ -370,45 +370,30 @@ func (c *Client) runRequest(ctx context.Context, kind string, name string, args 
 	if err := c.ensureConnected(ctx); err != nil {
 		return Failure(err), err
 	}
-	argsRaw, err := marshalWireValue(args)
+	commandKind := workerCommandMutation
+	if kind == "action" {
+		commandKind = workerCommandAction
+	}
+
+	resultAny, err := c.executeWorkerCommand(ctx, commandKind, workerRunRequestPayload{name: name, args: copyMap(args)})
 	if err != nil {
 		return Failure(err), err
 	}
-
-	c.mu.Lock()
-	c.nextRequestID++
-	requestID := c.nextRequestID
-	message := protocol.ClientMessage{
-		Type:      map[bool]string{true: "Mutation", false: "Action"}[kind == "mutation"],
-		RequestID: requestID,
-		UDFPath:   name,
-		Args:      argsRaw,
-	}
-	response := make(chan FunctionResult, 1)
-	c.pending[requestID] = &pendingRequest{
-		kind:     kind,
-		message:  message,
-		response: response,
-	}
-	c.mu.Unlock()
-
-	if err := c.send(ctx, message); err != nil {
-		c.mu.Lock()
-		delete(c.pending, requestID)
-		c.mu.Unlock()
-		return Failure(err), err
+	requestResult, ok := resultAny.(workerRunRequestResult)
+	if !ok {
+		return Failure(fmt.Errorf("invalid %s worker result", kind)), fmt.Errorf("invalid %s worker result", kind)
 	}
 
 	select {
-	case result := <-response:
+	case result := <-requestResult.response:
 		if result.Err != nil {
 			return result, result.Err
 		}
 		return result, nil
 	case <-ctx.Done():
-		c.mu.Lock()
-		delete(c.pending, requestID)
-		c.mu.Unlock()
+		cancelCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+		_, _ = c.executeWorkerCommand(cancelCtx, workerCommandCancelReq, workerCancelRequestPayload{requestID: requestResult.requestID, err: ctx.Err()})
+		cancel()
 		return Failure(ctx.Err()), ctx.Err()
 	}
 }
@@ -466,6 +451,12 @@ func (c *Client) handleWorkerCommand(cmd workerCommand) {
 		c.handleWorkerSubscribe(cmd)
 	case workerCommandUnsubscribe:
 		c.handleWorkerUnsubscribe(cmd)
+	case workerCommandMutation:
+		c.handleWorkerRunRequest(cmd, "mutation")
+	case workerCommandAction:
+		c.handleWorkerRunRequest(cmd, "action")
+	case workerCommandCancelReq:
+		c.handleWorkerCancelRequest(cmd)
 	case workerCommandClose:
 		cmd.resolve(nil, nil)
 	default:
@@ -520,6 +511,55 @@ func (c *Client) handleWorkerUnsubscribe(cmd workerCommand) {
 		return
 	}
 	c.unsubscribe(payload.subID)
+	cmd.resolve(nil, nil)
+}
+
+func (c *Client) handleWorkerRunRequest(cmd workerCommand, kind string) {
+	payload, ok := cmd.value.(workerRunRequestPayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid %s payload", kind))
+		return
+	}
+
+	argsRaw, err := marshalWireValue(payload.args)
+	if err != nil {
+		cmd.resolve(nil, err)
+		return
+	}
+
+	c.mu.Lock()
+	c.nextRequestID++
+	requestID := c.nextRequestID
+	message := protocol.ClientMessage{
+		Type:      map[bool]string{true: "Mutation", false: "Action"}[kind == "mutation"],
+		RequestID: requestID,
+		UDFPath:   payload.name,
+		Args:      argsRaw,
+	}
+	response := make(chan FunctionResult, 1)
+	c.pending[requestID] = &pendingRequest{kind: kind, message: message, response: response}
+	c.mu.Unlock()
+
+	c.enqueueOutbound(message)
+	cmd.resolve(workerRunRequestResult{requestID: requestID, response: response}, nil)
+}
+
+func (c *Client) handleWorkerCancelRequest(cmd workerCommand) {
+	payload, ok := cmd.value.(workerCancelRequestPayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid cancel request payload"))
+		return
+	}
+
+	c.mu.Lock()
+	pending, ok := c.pending[payload.requestID]
+	if ok {
+		pending.response <- Failure(payload.err)
+		close(pending.response)
+		delete(c.pending, payload.requestID)
+	}
+	c.mu.Unlock()
+
 	cmd.resolve(nil, nil)
 }
 

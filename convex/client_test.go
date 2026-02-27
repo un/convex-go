@@ -435,6 +435,27 @@ func TestFailureClassesPropagateReconnectReason(t *testing.T) {
 	}
 }
 
+func TestMutationContextCancellationRemovesPendingRequest(t *testing.T) {
+	server := newBlackholeSyncTestServer(t)
+	defer server.Close()
+
+	client := NewClientBuilder().WithDeploymentURL(server.URL).Build()
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
+	_, err := client.Mutation(ctx, "test:mutation", map[string]any{"x": 1})
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expected context deadline exceeded, got %v", err)
+	}
+
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	if len(client.pending) != 0 {
+		t.Fatalf("expected pending requests to be cleared after cancellation, got %d", len(client.pending))
+	}
+}
+
 func awaitState(t *testing.T, states <-chan WebSocketState) WebSocketState {
 	t.Helper()
 	select {
@@ -807,6 +828,34 @@ func newReplayOrderServer(t *testing.T) *replayOrderServer {
 	}))
 
 	return srv
+}
+
+func newBlackholeSyncTestServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	upgrader := websocket.Upgrader{}
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/sync" {
+			http.NotFound(w, r)
+			return
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		for {
+			_, data, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			if _, err := protocol.DecodeClientMessage(data); err != nil {
+				continue
+			}
+		}
+	}))
 }
 
 func (s *replayOrderServer) secondConnectionReplay() []string {

@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 44 mutation-action-through-worker
+- Context: Mutation/action request lifecycle was still initiated directly from API methods, outside worker command ownership.
+- Learning: Creating pending requests via worker commands and returning typed request handles keeps enqueue, cancellation, and response completion on one deterministic control path.
+- Impact on next steps: Watch/auth lifecycle wiring can now share the same command dispatch pattern used by query and request APIs.
+
 ## 2026-02-26 Step 43 subscribe-query-through-worker
 - Context: Subscribe/query state mutations were still performed directly from API call paths, bypassing worker ownership.
 - Learning: Routing subscribe/unsubscribe through typed worker commands keeps query-set state and outbound modify-query messages on the worker control path while preserving subscribe-first-value query semantics.

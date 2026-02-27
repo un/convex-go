@@ -485,7 +485,7 @@
         "Action response semantics are correct",
         "Error mapping is correct"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 45,
