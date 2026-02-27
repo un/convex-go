@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 39 worker-main-loop
+- Context: Transport reads were handled by a dedicated listener goroutine, while worker command routing was not yet connected.
+- Learning: Replacing listener reads with a worker event loop (command + transport select) establishes a single control point for runtime transitions and clean shutdown.
+- Impact on next steps: Outbound flush-before-select and communicate-during-send behavior can now be implemented in one loop without cross-goroutine ordering drift.
+
 ## 2026-02-26 Step 38 worker-command-event-model
 - Context: Runtime operations were coordinated by ad-hoc goroutines and direct method calls, which made ownership boundaries implicit.
 - Learning: Explicit typed worker commands/events (API command, transport message/error/done) make cancellation and routing semantics unambiguous before loop refactors.

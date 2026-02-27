@@ -51,10 +51,12 @@ type Client struct {
 	lastState     WebSocketState
 	hasLastState  bool
 
-	manager         *syncproto.WebSocketManager
-	responses       <-chan syncproto.ProtocolResponse
-	listenerStarted bool
-	connected       bool
+	manager        *syncproto.WebSocketManager
+	responses      <-chan syncproto.ProtocolResponse
+	workerStarted  bool
+	workerCommands chan workerCommand
+	workerDone     chan struct{}
+	connected      bool
 
 	state            *baseclient.LocalSyncState
 	querySubs        map[int64]chan Value
@@ -81,6 +83,8 @@ func newClient() *Client {
 		watchers:         map[int64]chan map[int64]Value{},
 		pending:          map[protocol.RequestSequenceNumber]*pendingRequest{},
 		transitionChunks: map[string]*transitionChunkBuffer{},
+		workerCommands:   make(chan workerCommand, 64),
+		workerDone:       make(chan struct{}),
 	}
 }
 
@@ -218,6 +222,8 @@ func (c *Client) Close() {
 	}
 	c.closed = true
 	manager := c.manager
+	workerStarted := c.workerStarted
+	workerDone := c.workerDone
 	for id, ch := range c.querySubs {
 		close(ch)
 		delete(c.querySubs, id)
@@ -233,8 +239,21 @@ func (c *Client) Close() {
 	}
 	c.mu.Unlock()
 
+	if workerStarted {
+		select {
+		case c.workerCommands <- workerCommand{kind: workerCommandClose}:
+		default:
+		}
+	}
+
 	if manager != nil {
 		_ = manager.Close()
+	}
+	if workerStarted {
+		select {
+		case <-workerDone:
+		case <-time.After(time.Second):
+		}
 	}
 	c.emitState(WebSocketStateDisconnected)
 }
@@ -306,14 +325,14 @@ func (c *Client) ensureConnected(ctx context.Context) error {
 	c.mu.Lock()
 	c.responses = responses
 	c.connected = true
-	shouldStart := !c.listenerStarted
+	shouldStart := !c.workerStarted
 	if shouldStart {
-		c.listenerStarted = true
+		c.workerStarted = true
 	}
 	c.mu.Unlock()
 
 	if shouldStart {
-		go c.listenLoop()
+		go c.workerLoop()
 	}
 
 	c.emitState(WebSocketStateConnected)
@@ -380,7 +399,9 @@ func (c *Client) runRequest(ctx context.Context, kind string, name string, args 
 	}
 }
 
-func (c *Client) listenLoop() {
+func (c *Client) workerLoop() {
+	defer close(c.workerDone)
+
 	for {
 		c.mu.Lock()
 		if c.closed {
@@ -394,18 +415,44 @@ func (c *Client) listenLoop() {
 			continue
 		}
 
-		response, ok := <-responses
-		if !ok {
-			c.onProtocolFailure(errors.New("websocket response stream closed"))
-			return
+		select {
+		case cmd := <-c.workerCommands:
+			c.handleWorkerCommand(cmd)
+		case response, ok := <-responses:
+			if !ok {
+				c.onProtocolFailure(errors.New("websocket response stream closed"))
+				return
+			}
+			event := workerEventFromProtocolResponse(response)
+			c.handleWorkerEvent(event)
 		}
-		if response.Err != nil {
-			c.onProtocolFailure(response.Err)
-			continue
+	}
+}
+
+func (c *Client) handleWorkerCommand(cmd workerCommand) {
+	if cmd.cancelled() {
+		cmd.resolve(nil, cmd.cancelErr())
+		return
+	}
+
+	switch cmd.kind {
+	case workerCommandClose:
+		cmd.resolve(nil, nil)
+	default:
+		cmd.resolve(nil, fmt.Errorf("unsupported worker command %q", cmd.kind))
+	}
+}
+
+func (c *Client) handleWorkerEvent(event workerEvent) {
+	switch event.kind {
+	case workerEventTransportErr:
+		c.onProtocolFailure(event.err)
+	case workerEventTransportMsg:
+		if event.message != nil {
+			c.handleServerMessage(*event.message)
 		}
-		if response.Message != nil {
-			c.handleServerMessage(*response.Message)
-		}
+	case workerEventTransportDone:
+		c.onProtocolFailure(errors.New("websocket response stream closed"))
 	}
 }
 

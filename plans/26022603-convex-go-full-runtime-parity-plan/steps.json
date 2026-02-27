@@ -430,7 +430,7 @@
         "Ordering semantics are deterministic",
         "Loop exits cleanly on shutdown"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 40,
