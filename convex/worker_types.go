@@ -27,6 +27,20 @@ type workerCommand struct {
 	result chan workerCommandResult
 }
 
+type workerSubscribePayload struct {
+	name string
+	args map[string]any
+}
+
+type workerSubscribeResult struct {
+	subID   int64
+	updates chan Value
+}
+
+type workerUnsubscribePayload struct {
+	subID int64
+}
+
 type workerCommandResult struct {
 	value any
 	err   error

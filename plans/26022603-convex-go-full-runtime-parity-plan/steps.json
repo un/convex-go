@@ -474,7 +474,7 @@
         "Query behavior matches subscribe-first-value",
         "API tests pass"
       ],
-      "completed": false
+      "completed": true
     },
     {
       "serial": 44,

@@ -112,40 +112,21 @@ func (c *Client) Subscribe(ctx context.Context, name string, args map[string]any
 		return nil, err
 	}
 
-	c.mu.Lock()
-	queryID, subID, added, err := c.state.Subscribe(name, args)
+	result, err := c.executeWorkerCommand(ctx, workerCommandSubscribe, workerSubscribePayload{name: name, args: copyMap(args)})
 	if err != nil {
-		c.mu.Unlock()
 		return nil, err
 	}
-
-	updates := make(chan Value, 16)
-	c.querySubs[subID] = updates
-	if c.querySubscribers[queryID] == nil {
-		c.querySubscribers[queryID] = map[int64]struct{}{}
-	}
-	c.querySubscribers[queryID][subID] = struct{}{}
-	c.queries[queryID] = queryRegistration{path: name, args: copyMap(args)}
-
-	if value, ok := c.snapshotForSubscriberLocked(subID); ok {
-		updates <- value
-	}
-	c.mu.Unlock()
-
-	if added {
-		msg, err := c.buildModifyAddMessage(queryID, name, args)
-		if err != nil {
-			return nil, err
-		}
-		if err := c.send(ctx, msg); err != nil {
-			return nil, err
-		}
+	subscribeResult, ok := result.(workerSubscribeResult)
+	if !ok {
+		return nil, fmt.Errorf("invalid subscribe worker result")
 	}
 
 	return &QuerySubscription{
-		UpdatesCh: updates,
+		UpdatesCh: subscribeResult.updates,
 		closeFn: func() {
-			c.unsubscribe(subID)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			_, _ = c.executeWorkerCommand(ctx, workerCommandUnsubscribe, workerUnsubscribePayload{subID: subscribeResult.subID})
 		},
 	}, nil
 }
@@ -363,6 +344,28 @@ func (c *Client) send(ctx context.Context, message protocol.ClientMessage) error
 	return manager.Send(ctx, message)
 }
 
+func (c *Client) executeWorkerCommand(ctx context.Context, kind workerCommandKind, value any) (any, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	resultCh := make(chan workerCommandResult, 1)
+	command := workerCommand{kind: kind, ctx: ctx, value: value, result: resultCh}
+
+	select {
+	case c.workerCommands <- command:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	select {
+	case result := <-resultCh:
+		return result.value, result.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
 func (c *Client) runRequest(ctx context.Context, kind string, name string, args map[string]any) (FunctionResult, error) {
 	if err := c.ensureConnected(ctx); err != nil {
 		return Failure(err), err
@@ -459,11 +462,65 @@ func (c *Client) handleWorkerCommand(cmd workerCommand) {
 	}
 
 	switch cmd.kind {
+	case workerCommandSubscribe:
+		c.handleWorkerSubscribe(cmd)
+	case workerCommandUnsubscribe:
+		c.handleWorkerUnsubscribe(cmd)
 	case workerCommandClose:
 		cmd.resolve(nil, nil)
 	default:
 		cmd.resolve(nil, fmt.Errorf("unsupported worker command %q", cmd.kind))
 	}
+}
+
+func (c *Client) handleWorkerSubscribe(cmd workerCommand) {
+	payload, ok := cmd.value.(workerSubscribePayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid subscribe payload"))
+		return
+	}
+
+	c.mu.Lock()
+	queryID, subID, added, err := c.state.Subscribe(payload.name, payload.args)
+	if err != nil {
+		c.mu.Unlock()
+		cmd.resolve(nil, err)
+		return
+	}
+
+	updates := make(chan Value, 16)
+	c.querySubs[subID] = updates
+	if c.querySubscribers[queryID] == nil {
+		c.querySubscribers[queryID] = map[int64]struct{}{}
+	}
+	c.querySubscribers[queryID][subID] = struct{}{}
+	c.queries[queryID] = queryRegistration{path: payload.name, args: copyMap(payload.args)}
+
+	if value, ok := c.snapshotForSubscriberLocked(subID); ok {
+		updates <- value
+	}
+	c.mu.Unlock()
+
+	if added {
+		msg, err := c.buildModifyAddMessage(queryID, payload.name, payload.args)
+		if err != nil {
+			cmd.resolve(nil, err)
+			return
+		}
+		c.enqueueOutbound(msg)
+	}
+
+	cmd.resolve(workerSubscribeResult{subID: subID, updates: updates}, nil)
+}
+
+func (c *Client) handleWorkerUnsubscribe(cmd workerCommand) {
+	payload, ok := cmd.value.(workerUnsubscribePayload)
+	if !ok {
+		cmd.resolve(nil, fmt.Errorf("invalid unsubscribe payload"))
+		return
+	}
+	c.unsubscribe(payload.subID)
+	cmd.resolve(nil, nil)
 }
 
 func (c *Client) handleWorkerEvent(event workerEvent) {

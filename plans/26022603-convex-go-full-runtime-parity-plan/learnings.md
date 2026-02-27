@@ -1,5 +1,10 @@
 # Learnings
 
+## 2026-02-26 Step 43 subscribe-query-through-worker
+- Context: Subscribe/query state mutations were still performed directly from API call paths, bypassing worker ownership.
+- Learning: Routing subscribe/unsubscribe through typed worker commands keeps query-set state and outbound modify-query messages on the worker control path while preserving subscribe-first-value query semantics.
+- Impact on next steps: Mutation/action/auth APIs can now be moved to the same worker command channel with shared ordering guarantees.
+
 ## 2026-02-26 Step 42 protocol-failure-reconnect-propagation
 - Context: Failure-triggered reconnects existed, but payload completeness across failure classes and max-observed derivation were not explicitly enforced.
 - Learning: Centralizing failure payload construction (`reason` + max of observed transition TS and mutation visibility TS) plus class-level propagation tests hardens reconnect correctness under protocol/transport errors.
