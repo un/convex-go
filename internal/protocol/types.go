@@ -329,10 +329,13 @@ func (mod *StateModification) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &payload); err != nil {
 			return err
 		}
-		if payload.Value == nil {
-			return fmt.Errorf("query updated modification missing value")
+		var value json.RawMessage
+		if payload.Value != nil {
+			value = *payload.Value
+		} else {
+			value = json.RawMessage("null")
 		}
-		mod.updated = &StateQueryUpdated{QueryID: payload.QueryID, Value: *payload.Value, Journal: payload.Journal}
+		mod.updated = &StateQueryUpdated{QueryID: payload.QueryID, Value: value, Journal: payload.Journal}
 		mod.failed = nil
 		mod.removed = nil
 		return nil
