@@ -49,7 +49,8 @@ type Client struct {
 	deploymentURL string
 	wsURL         string
 	clientID      string
-	stateCallback StateCallback
+	stateCallback  StateCallback
+	failureCallback FailureCallback
 	lastState     WebSocketState
 	hasLastState  bool
 
@@ -1079,22 +1080,27 @@ func (c *Client) onProtocolFailure(err error) {
 		err = errors.New("unknown protocol failure")
 	}
 
-
 	c.mu.Lock()
 	if c.closed || c.reconnecting {
 		c.mu.Unlock()
 		return
 	}
+
+	// Always log the failure reason — critical for debugging reconnect storms.
+	log.Printf("[CONVEX-SDK] onProtocolFailure: %s (outbound=%d)", err.Error(), len(c.outboundQueue))
+
 	c.connected = false
 	c.reconnecting = true
 	c.lastTransition = nil
 	c.transitionChunks = map[string]*transitionChunkBuffer{}
-	if len(c.outboundQueue) > 0 {
-		log.Printf("[CONVEX-SDK] onProtocolFailure: clearing %d stale outbound messages", len(c.outboundQueue))
-	}
 	c.outboundQueue = nil
 	observed := c.maxObservedTimestampLocked()
+	callback := c.failureCallback
 	c.mu.Unlock()
+
+	if callback != nil {
+		callback(err)
+	}
 
 	c.emitState(WebSocketStateReconnecting)
 

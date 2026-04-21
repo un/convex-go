@@ -2,10 +2,13 @@ package convex
 
 type StateCallback func(WebSocketState)
 
+type FailureCallback func(err error)
+
 type ClientBuilder struct {
-	deploymentURL string
-	clientID      string
-	stateCallback StateCallback
+	deploymentURL  string
+	clientID       string
+	stateCallback  StateCallback
+	failureCallback FailureCallback
 }
 
 func NewClientBuilder() *ClientBuilder {
@@ -27,10 +30,16 @@ func (b *ClientBuilder) WithWebSocketStateCallback(callback StateCallback) *Clie
 	return b
 }
 
+func (b *ClientBuilder) WithFailureCallback(callback FailureCallback) *ClientBuilder {
+	b.failureCallback = callback
+	return b
+}
+
 func (b *ClientBuilder) Build() *Client {
 	c := newClient()
 	c.clientID = b.clientID
 	c.stateCallback = b.stateCallback
+	c.failureCallback = b.failureCallback
 	c.deploymentURL = b.deploymentURL
 	return c
 }

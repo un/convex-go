@@ -330,7 +330,14 @@ func (mod *StateModification) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		if payload.Value == nil {
-			return fmt.Errorf("query updated modification missing value")
+			// The Convex server may send QueryUpdated with value=null when a
+			// query function returns null, or when a stale transition arrives
+			// for a recently-removed query (race between ModifyQuerySet Remove
+			// and pending server-side transitions). Go's JSON decoder maps
+			// both "value":null and absent "value" to *json.RawMessage=nil,
+			// so we treat nil as JSON null — a valid Convex value.
+			nullVal := json.RawMessage("null")
+			payload.Value = &nullVal
 		}
 		mod.updated = &StateQueryUpdated{QueryID: payload.QueryID, Value: *payload.Value, Journal: payload.Journal}
 		mod.failed = nil
