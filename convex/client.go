@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"sync"
@@ -40,14 +41,16 @@ type transitionChunkBuffer struct {
 }
 
 type Client struct {
-	mu sync.Mutex
+	mu         sync.Mutex
+	replayDone *sync.Cond // signaled when reconnecting transitions to false
 
 	closed        bool
 	reconnecting  bool
 	deploymentURL string
 	wsURL         string
 	clientID      string
-	stateCallback StateCallback
+	stateCallback  StateCallback
+	failureCallback FailureCallback
 	lastState     WebSocketState
 	hasLastState  bool
 
@@ -81,7 +84,7 @@ type Client struct {
 }
 
 func newClient() *Client {
-	return &Client{
+	c := &Client{
 		state:            NewLocalState(),
 		querySubs:        map[int64]chan Value{},
 		querySubscribers: map[uint64]map[int64]struct{}{},
@@ -93,6 +96,8 @@ func newClient() *Client {
 		workerDone:       make(chan struct{}),
 		flushWake:        make(chan struct{}, 1),
 	}
+	c.replayDone = sync.NewCond(&c.mu)
+	return c
 }
 
 func NewClient() *Client {
@@ -245,6 +250,33 @@ func (c *Client) SetAuthCallback(fetcher AuthTokenFetcher) error {
 	return err
 }
 
+// ForceReconnect forces the client to close its current WebSocket connection
+// and reconnect immediately. This is useful when the process wakes from
+// suspension (e.g., Fly.io Machine resume, VM unpaused) and the existing
+// connection is known to be stale.
+//
+// Uses the SDK's built-in reconnect loop with exponential backoff (starting
+// at 100ms), so reconnection typically completes in ~200ms.
+//
+// No-op if the client is not currently connected (connected=false), which
+// prevents racing with ensureConnected during initial connection establishment.
+func (c *Client) ForceReconnect() {
+	c.mu.Lock()
+	if !c.connected {
+		c.mu.Unlock()
+		return
+	}
+	c.mu.Unlock()
+	c.onProtocolFailure(fmt.Errorf("ForceReconnect: stale connection after process wake"))
+}
+
+// IsConnected returns whether the client currently has an active WebSocket connection.
+func (c *Client) IsConnected() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.connected
+}
+
 func (c *Client) Close() {
 	c.mu.Lock()
 	if c.closed {
@@ -252,6 +284,7 @@ func (c *Client) Close() {
 		return
 	}
 	c.closed = true
+	c.replayDone.Broadcast()
 	manager := c.manager
 	workerStarted := c.workerStarted
 	workerDone := c.workerDone
@@ -324,6 +357,15 @@ func (c *Client) ensureConnected(ctx context.Context) error {
 		return fmt.Errorf("client closed")
 	}
 	if c.connected {
+		if c.reconnecting {
+			// WebSocket is up but replayState is still running.
+			// Block until reconnectLoop broadcasts completion.
+			c.replayDone.Wait()
+			if c.reconnecting {
+				return fmt.Errorf("client still reconnecting")
+			}
+			return nil
+		}
 		c.mu.Unlock()
 		return nil
 	}
@@ -375,6 +417,10 @@ func (c *Client) ensureConnected(ctx context.Context) error {
 
 func (c *Client) send(ctx context.Context, message protocol.ClientMessage) error {
 	c.mu.Lock()
+	if c.reconnecting {
+		c.mu.Unlock()
+		return fmt.Errorf("client reconnecting")
+	}
 	sendFn := c.sendFn
 	manager := c.manager
 	c.mu.Unlock()
@@ -452,6 +498,7 @@ func (c *Client) workerLoop() {
 
 		c.mu.Lock()
 		if c.closed {
+			c.replayDone.Broadcast()
 			c.mu.Unlock()
 			return
 		}
@@ -487,6 +534,19 @@ func (c *Client) handleWorkerCommand(cmd workerCommand) {
 	if cmd.cancelled() {
 		cmd.resolve(nil, cmd.cancelErr())
 		return
+	}
+
+	// During reconnect, replayState() rebuilds the query set from scratch.
+	// Allowing Subscribe/Mutation commands to run here would enqueue stale
+	// ModifyQuerySet messages with wrong BaseVersion, causing FatalError.
+	if cmd.kind != workerCommandClose {
+		c.mu.Lock()
+		recon := c.reconnecting
+		c.mu.Unlock()
+		if recon {
+			cmd.resolve(nil, fmt.Errorf("client reconnecting"))
+			return
+		}
 	}
 
 	switch cmd.kind {
@@ -743,7 +803,12 @@ func (c *Client) flushOutboundBeforeSelect() error {
 
 		if err := c.sendWhileCommunicating(message); err != nil {
 			c.mu.Lock()
-			c.outboundQueue = append([]protocol.ClientMessage{message}, c.outboundQueue...)
+			if c.connected {
+				// Still connected — re-queue for retry
+				c.outboundQueue = append([]protocol.ClientMessage{message}, c.outboundQueue...)
+			}
+			// If !connected, onProtocolFailure already cleared the queue.
+			// replayState() will re-enqueue what's needed after reconnect.
 			c.mu.Unlock()
 			return err
 		}
@@ -1020,12 +1085,22 @@ func (c *Client) onProtocolFailure(err error) {
 		c.mu.Unlock()
 		return
 	}
+
+	// Always log the failure reason — critical for debugging reconnect storms.
+	log.Printf("[CONVEX-SDK] onProtocolFailure: %s (outbound=%d)", err.Error(), len(c.outboundQueue))
+
 	c.connected = false
 	c.reconnecting = true
 	c.lastTransition = nil
 	c.transitionChunks = map[string]*transitionChunkBuffer{}
+	c.outboundQueue = nil
 	observed := c.maxObservedTimestampLocked()
+	callback := c.failureCallback
 	c.mu.Unlock()
+
+	if callback != nil {
+		callback(err)
+	}
 
 	c.emitState(WebSocketStateReconnecting)
 
@@ -1038,6 +1113,7 @@ func (c *Client) reconnectLoop(reason string, observed uint64) {
 	for {
 		c.mu.Lock()
 		if c.closed {
+			c.replayDone.Broadcast()
 			c.mu.Unlock()
 			return
 		}
@@ -1076,12 +1152,18 @@ func (c *Client) reconnectLoop(reason string, observed uint64) {
 
 		c.mu.Lock()
 		c.connected = true
-		c.reconnecting = false
+		// Keep reconnecting=true during replayState to prevent workerLoop from
+		// enqueuing stale ModifyQuerySet messages with wrong BaseVersion.
 		c.mu.Unlock()
 
 		c.emitState(WebSocketStateConnected)
 
 		_ = c.replayState()
+
+		c.mu.Lock()
+		c.reconnecting = false
+		c.replayDone.Broadcast()
+		c.mu.Unlock()
 		return
 	}
 }
