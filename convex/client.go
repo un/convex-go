@@ -1034,6 +1034,11 @@ func (c *Client) handleMutationResponse(message protocol.ServerMessage) {
 		delete(c.pending, message.RequestID)
 		return
 	}
+	// Observe the mutation's own timestamp so resolveMutationVisibilityLocked
+	// can complete immediately without waiting for an external Transition.
+	// This matches the official Rust SDK behavior (observe_timestamp in
+	// MutationResponse handler).
+	c.state.UpdateObservedTimestamp(ts)
 	pending.visibleTS = ts
 	pending.waitingOnTS = true
 	c.resolveMutationVisibilityLocked()
